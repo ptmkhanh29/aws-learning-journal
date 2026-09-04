@@ -62,12 +62,12 @@ Chỉ dùng uppercase monospace khi có ý nghĩa kỹ thuật, ví dụ `REFLEC
 
 ## 5. Nguyên tắc human-authored trong composition
 
-Không lặp cùng thứ tự label, title, description, tag và CTA ở mọi block. Journal, notes, labs, topic shelf và profile cần có nhịp riêng:
+Không lặp cùng thứ tự label, title, description, tag và CTA ở mọi block. Journal, notes, labs, topic tags và profile cần có nhịp riêng:
 
 - journal có thể dùng ảnh, title và excerpt;
 - notes hợp với divider và list row;
 - lab có thể nhấn vào trạng thái và hình ảnh;
-- topic shelf nhấn vào chủ đề đang học;
+- topic tags chỉ làm secondary navigation;
 - profile nhấn vào identity và giọng viết cá nhân.
 
 Typography, whitespace và alignment được phép tạo hierarchy mà không cần thêm card hoặc badge.

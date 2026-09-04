@@ -3,7 +3,8 @@ import type { LocalizedText } from "@/lib/i18n";
 export type HomeNavItem = {
   label: LocalizedText;
   href: string;
-  icon?: "journal" | "notes" | "labs" | "tips" | "docs" | "practice";
+  icon?: "home" | "journal" | "notes" | "labs" | "aws" | "practice" | "cloudflare" | "wordpress" | "devops";
+  active?: boolean;
 };
 
 export type HomeNavGroup = {
@@ -15,63 +16,63 @@ export const homeNavigation: HomeNavGroup[] = [
   {
     label: { en: "Explore", vi: "Khám phá" },
     items: [
+      { label: { en: "Home", vi: "Trang chủ" }, href: "/", icon: "home" },
       { label: { en: "Journal", vi: "Nhật ký" }, href: "/journal", icon: "journal" },
       { label: { en: "Notes", vi: "Ghi chú" }, href: "/notes", icon: "notes" },
       { label: { en: "Labs", vi: "Labs" }, href: "/labs", icon: "labs" },
-      { label: { en: "Tips", vi: "Mẹo" }, href: "/notes", icon: "tips" },
-      { label: { en: "Docs", vi: "Tài liệu" }, href: "/aws", icon: "docs" },
-      { label: { en: "Practice", vi: "Ôn tập" }, href: "/practice", icon: "practice" },
-    ],
-  },
-  {
-    label: { en: "Collections", vi: "Bộ sưu tập" },
-    items: [
-      { label: { en: "Reflections", vi: "Chiêm nghiệm" }, href: "/journal" },
-      { label: { en: "Cheat sheets", vi: "Cheat sheets" }, href: "/notes" },
-      { label: { en: "Architecture", vi: "Kiến trúc" }, href: "/labs" },
-      { label: { en: "Troubleshooting", vi: "Xử lý sự cố" }, href: "/journal" },
-      { label: { en: "Quick reads", vi: "Đọc nhanh" }, href: "/notes" },
     ],
   },
   {
     label: { en: "Topics", vi: "Chủ đề" },
     items: [
-      { label: { en: "Networking", vi: "Mạng" }, href: "/aws" },
-      { label: { en: "Storage", vi: "Lưu trữ" }, href: "/aws" },
-      { label: { en: "Compute", vi: "Điện toán" }, href: "/aws" },
-      { label: { en: "Databases", vi: "Cơ sở dữ liệu" }, href: "/aws" },
-      { label: { en: "Security", vi: "Bảo mật" }, href: "/aws" },
+      { label: { en: "AWS", vi: "AWS" }, href: "/aws", icon: "aws" },
+      { label: { en: "AWS Practice", vi: "Ôn tập AWS" }, href: "/practice", icon: "practice" },
+      { label: { en: "Cloudflare", vi: "Cloudflare" }, href: "/notes", icon: "cloudflare", active: false },
+      { label: { en: "WordPress", vi: "WordPress" }, href: "/notes", icon: "wordpress", active: false },
+      { label: { en: "DevOps", vi: "DevOps" }, href: "/labs", icon: "devops", active: false },
+    ],
+  },
+  {
+    label: { en: "Collections", vi: "Bộ sưu tập" },
+    items: [
+      { label: { en: "Reflections", vi: "Chiêm nghiệm" }, href: "/journal", active: false },
+      { label: { en: "Cheat sheets", vi: "Cheat sheets" }, href: "/notes", active: false },
+      { label: { en: "Troubleshooting", vi: "Xử lý sự cố" }, href: "/journal", active: false },
     ],
   },
 ];
 
 export type NotebookTopic = {
-  label: string;
+  id: string;
+  slug: string;
+  labelVi: string;
+  labelEn: string;
   count: number;
-  emoji: string;
-  tone: "cyan" | "yellow" | "orange" | "lilac" | "blue" | "mint" | "amber";
+  icon: "network" | "storage" | "compute" | "security" | "database" | "dns" | "function" | "cdn" | "table" | "queue" | "monitoring";
+  tone: "cyan" | "yellow" | "orange" | "lavender" | "blue" | "mint" | "amber" | "aqua" | "lilac" | "green" | "slate";
 };
 
+// Illustrative content totals for the mock topic catalogue; supplied by the API later.
 export const notebookFilters: NotebookTopic[] = [
-  { label: "VPC", count: 14, emoji: "🌐", tone: "cyan" },
-  { label: "S3", count: 12, emoji: "🪣", tone: "yellow" },
-  { label: "EC2", count: 9, emoji: "🖥️", tone: "orange" },
-  { label: "IAM", count: 7, emoji: "🔐", tone: "lilac" },
-  { label: "RDS", count: 5, emoji: "🗄️", tone: "blue" },
-  { label: "Route 53", count: 6, emoji: "🧭", tone: "mint" },
-  { label: "Lambda", count: 8, emoji: "⚡", tone: "amber" },
-  { label: "CloudFront", count: 4, emoji: "🌍", tone: "blue" },
-  { label: "DynamoDB", count: 5, emoji: "🧩", tone: "lilac" },
-  { label: "SQS", count: 3, emoji: "📬", tone: "mint" },
-  { label: "CloudWatch", count: 4, emoji: "📈", tone: "cyan" },
+  { id: "topic-vpc", slug: "vpc", labelVi: "VPC", labelEn: "VPC", count: 14, icon: "network", tone: "cyan" },
+  { id: "topic-s3", slug: "s3", labelVi: "S3", labelEn: "S3", count: 12, icon: "storage", tone: "yellow" },
+  { id: "topic-ec2", slug: "ec2", labelVi: "EC2", labelEn: "EC2", count: 9, icon: "compute", tone: "orange" },
+  { id: "topic-iam", slug: "iam", labelVi: "IAM", labelEn: "IAM", count: 7, icon: "security", tone: "lavender" },
+  { id: "topic-rds", slug: "rds", labelVi: "RDS", labelEn: "RDS", count: 5, icon: "database", tone: "blue" },
+  { id: "topic-route53", slug: "route-53", labelVi: "Route 53", labelEn: "Route 53", count: 6, icon: "dns", tone: "mint" },
+  { id: "topic-lambda", slug: "lambda", labelVi: "Lambda", labelEn: "Lambda", count: 8, icon: "function", tone: "amber" },
+  { id: "topic-cloudfront", slug: "cloudfront", labelVi: "CloudFront", labelEn: "CloudFront", count: 4, icon: "cdn", tone: "aqua" },
+  { id: "topic-dynamodb", slug: "dynamodb", labelVi: "DynamoDB", labelEn: "DynamoDB", count: 5, icon: "table", tone: "lilac" },
+  { id: "topic-sqs", slug: "sqs", labelVi: "SQS", labelEn: "SQS", count: 3, icon: "queue", tone: "green" },
+  { id: "topic-cloudwatch", slug: "cloudwatch", labelVi: "CloudWatch", labelEn: "CloudWatch", count: 4, icon: "monitoring", tone: "slate" },
 ];
 
 export const homeProfile = {
-  name: "Minh Khanh",
+  name: "Khanh Phan",
   direction: "DevOps · Cloud Architecture",
   bio: {
-    en: "I write down what I’m learning, where I got it wrong, and how I rebuilt my mental model of the cloud.",
-    vi: "Tôi ghi lại những gì mình học, những chỗ từng hiểu sai và cách mình sửa lại mental model về cloud.",
+    en: "I write down what I’m learning, what I build, where it broke, and how my engineering mental model changed.",
+    vi: "Mình ghi lại những gì đang học, đang xây, những chỗ từng làm sai và cách mental model kỹ thuật thay đổi.",
   } satisfies LocalizedText,
   certification: "AWS SAA-C03",
   focus: ["VPC", "Route 53", "Resilient architectures"],
@@ -79,12 +80,6 @@ export const homeProfile = {
 
 export const homeCopy = {
   en: {
-    eyebrow: "Notes from my cloud journey",
-    title: "A small place for what I’m learning about AWS.",
-    intro: "I keep the useful notes, honest mistakes, and little breakthroughs here.",
-    browse: "Topics on my desk",
-    browseIntro: "A few services that keep showing up in my notes and labs.",
-    topicCount: "11 topics",
     latest: "What I’ve been writing lately",
     recentNotes: "A few recent notes",
     recentLab: "What I built lately",
@@ -92,7 +87,6 @@ export const homeCopy = {
     allNotes: "See all notes",
     allLabs: "See all labs",
     about: "About",
-    profileNote: "learning, then writing it down",
     now: "Now",
     studying: "I’m currently studying",
     focus: "What I’m focusing on",
@@ -101,17 +95,10 @@ export const homeCopy = {
     read: "Read entry",
     viewLab: "View lab",
     navigation: "Notebook navigation",
-    openNavigation: "Browse my notebook",
     complete: "Complete",
     minRead: "min read",
   },
   vi: {
-    eyebrow: "Ghi chép trên hành trình cloud",
-    title: "Một góc nhỏ để mình ghi lại những điều đang học về AWS.",
-    intro: "Ở đây có ghi chú hữu ích, những lần hiểu sai và vài khoảnh khắc mình chợt hiểu ra.",
-    browse: "Mình đang ghi chép về",
-    browseIntro: "Một vài chủ đề mình gặp lại nhiều trong lúc học và làm lab.",
-    topicCount: "11 chủ đề",
     latest: "Gần đây mình viết gì",
     recentNotes: "Mấy ghi chú gần đây",
     recentLab: "Lab mình vừa làm",
@@ -119,7 +106,6 @@ export const homeCopy = {
     allNotes: "Xem tất cả ghi chú",
     allLabs: "Xem tất cả labs",
     about: "Giới thiệu",
-    profileNote: "học rồi ghi lại",
     now: "Hiện tại",
     studying: "Hiện tại mình đang học",
     focus: "Đang tập trung vào",
@@ -128,7 +114,6 @@ export const homeCopy = {
     read: "Đọc bài",
     viewLab: "Xem lab",
     navigation: "Điều hướng sổ tay",
-    openNavigation: "Mở sổ tay của mình",
     complete: "Hoàn thành",
     minRead: "phút đọc",
   },

@@ -1,6 +1,6 @@
-# AWS Learning Journal
+# Khanh Phan
 
-A bilingual personal knowledge garden for recording AWS study notes, labs, corrections, and SAA-C03 practice.
+A bilingual personal technical blog for engineering notes, experiments, labs, troubleshooting, and things Khanh builds and learns.
 
 ## Current phase
 

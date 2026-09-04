@@ -14,7 +14,7 @@ Không phải section nào cũng cần card, badge, background riêng, border, b
 
 ## 3. Hệ màu neutral-first
 
-Phần lớn giao diện dùng white, cream, near-black, charcoal và gray. Chỉ dùng một accent chính thuộc hướng muted slate blue, dusty indigo hoặc desaturated steel blue. Accent phải ít saturation, không chói và chỉ dành cho active state, link, focus, small label hoặc interaction nhỏ.
+Phần lớn giao diện dùng white, cream, near-black, charcoal và gray. Không ép một accent màu duy nhất lên link, active state, header và button. Hierarchy chính đến từ typography, luminance, spacing và surface.
 
 Hướng tham khảo cho light mode:
 
@@ -42,7 +42,7 @@ accent          #929FBD
 accent-soft     #292F3E
 ```
 
-Đây là direction, không phải mã màu bắt buộc. Giữ contrast đủ đọc lâu và phân cấp surface bằng luminance tinh tế. Không dùng teal, xanh lá, coral, đỏ, cam mạnh, ochre/gold hoặc nâu làm brand color chủ đạo. Dark mode không được ngả nâu hoặc cam.
+Đây là direction, không phải mã màu bắt buộc. Giữ contrast đủ đọc lâu và phân cấp surface bằng luminance tinh tế. Semantic micro-color được dùng cho domain dot, status dot, topic tag, focus ring và màu brand của GitHub/LinkedIn. Không dùng teal, xanh lá, coral, đỏ, cam mạnh, ochre/gold hoặc nâu làm brand color chủ đạo. Dark mode không được ngả nâu hoặc cam.
 
 AWS service/topic tag có thể dùng các tint cực nhẹ, nhưng tổng thể vẫn phải đọc như một hệ neutral thống nhất; không tạo rainbow chips.
 
@@ -57,6 +57,7 @@ Cấm square grid, graph-paper, checker hoặc technical grid phủ toàn trang.
 Rule chung: không dùng emoji làm UI icon. Ngoại lệ duy nhất là emoji nhỏ đứng trước label trong AWS service/topic tag; emoji chỉ là chi tiết phụ.
 
 - Icon điều hướng và interaction dùng asset thật, ưu tiên một SVG family với `currentColor`.
+- Logo AWS Learning Journal là custom SVG mark tối giản, monochrome-friendly và rõ ở 28–40px; không dùng icon library generic, AWS logo chính thức, mascot hoặc cloud cliché làm logo.
 - Không dùng ký tự Unicode để giả arrow, external-link, chevron hoặc action indicator.
 - Icon nhỏ thường ở 16–20px, stroke và weight nhất quán.
 - Icon nổi bật có thể dùng transparent PNG hoặc asset từ CDN ổn định; centralize URL/reference thay vì rải rác.

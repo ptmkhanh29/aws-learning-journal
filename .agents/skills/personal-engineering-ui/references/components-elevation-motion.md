@@ -38,14 +38,15 @@ Shadow phải mềm, nhiều layer và opacity thấp. Không dùng giant shadow
 
 ### Feature card theo theme và SAA-C03 Exam Practice
 
-Feature card phải khai báo surface, text, metadata, tile và CTA theo từng theme; không hard-code một dark surface rồi dùng cho cả light và dark mode.
+Feature card phải khai báo surface, text, metadata và domain entry theo từng theme; không hard-code một dark surface rồi dùng cho cả light và dark mode.
 
 - Light mode dùng white, cream hoặc light warm gray. Tạo chiều sâu bằng một contact shadow rất nhẹ kết hợp ambient shadow rộng hơn, opacity thấp; không dùng mảng charcoal lớn để tạo hierarchy.
-- Dark mode được dùng charcoal hoặc near-black. Tile bên trong sáng hơn outer surface một chút để tách lớp mà không cần border gắt.
-- SAA-C03 Exam Practice giữ composition compact và grid `2 × 2` trên desktop. Không kéo trở lại thành giant hero hoặc bốn hàng dọc.
-- Mỗi domain tile phải có context theo thứ tự `index + semantic dot + DOMAIN n`; index không được đứng trơ trọi như placeholder.
+- Dark mode được dùng charcoal hoặc near-black. Domain entry tách bằng tonal shift hoặc divider nhẹ, không cần tile/card con riêng.
+- SAA-C03 Exam Practice giữ composition compact và grid `2 × 2` trên cả desktop lẫn mobile. Mobile dùng responsive title/topics ngắn hơn khi cần; không kéo trở lại thành giant hero hoặc bốn hàng dọc.
+- Ưu tiên một outer feature surface với bốn editorial domain entry được tổ chức bằng divider và whitespace; không mặc định biến mỗi domain thành card con.
+- Mỗi domain entry phải có context theo thứ tự `index + semantic dot + DOMAIN n`; index không được đứng trơ trọi như placeholder.
 - Màu domain chỉ xuất hiện ở dot nhỏ. Không tô nền tile theo từng domain, không glow và không biến cụm này thành dashboard nhiều màu.
-- Elevation của domain tile luôn thấp hơn container chính; hover chỉ nâng `1px` và tăng shadow nhẹ.
+- Domain entry không cần elevation riêng. Hover có thể chỉ đổi title/surface rất nhẹ; nếu dùng elevation thì phải thấp hơn container chính.
 
 Radius tham khảo:
 
@@ -60,11 +61,11 @@ Chỉ dùng pill radius khi hình dạng pill có ý nghĩa. Không dùng radius
 
 ## 3. Service/topic tag
 
-Service/topic tag thuộc editorial topic shelf, không phải generic Material chip hay dashboard filter.
+Service/topic tag là inline secondary navigation đặt dưới Exam Practice, không phải topic shelf card, generic Material chip hay dashboard filter.
 
-- Natural width, consistent height và wrap thành nhiều hàng.
+- Natural width, consistent height và nằm trong horizontal rail một hàng duy nhất trên homepage; rail scroll ngang thay vì wrap.
 - Padding dọc khoảng 6–8px, ngang khoảng 9–12px.
-- Icon, label và count cách nhau khoảng 7–8px.
+- Label là nội dung bắt buộc; icon và count chỉ giữ khi thực sự tăng khả năng scan.
 - Monospace 11–12px hoặc sans nhỏ nếu hợp hierarchy.
 - Surface neutral, border cực nhẹ hoặc không border.
 - Tint giữa các service chỉ khác rất nhẹ và saturation thấp.
@@ -72,7 +73,7 @@ Service/topic tag thuộc editorial topic shelf, không phải generic Material 
 
 Ngoại lệ: service/topic tag được dùng emoji nhỏ ở đầu. Emoji không được lớn hoặc nổi hơn label.
 
-Hover chỉ nâng khoảng `translateY(-1px)`, tăng shadow nhẹ và thêm accent tint rất nhỏ trong 150–180ms. Active state dùng accent-soft, không neon và không đổi cả tag thành màu bão hòa.
+Hover chỉ cần đổi border, surface hoặc text rất nhẹ trong 150–180ms; không bắt buộc nâng/shadow. Active state dùng neutral hoặc semantic micro-color, không neon và không đổi cả tag thành màu bão hòa.
 
 ## 4. Article tag
 
@@ -129,6 +130,7 @@ Không dùng bounce, spring mạnh, rotate, glow, parallax, scale lớn hoặc a
 
 ## 9. Icon asset
 
+- Logo dự án là custom SVG mark dùng chung cho header, drawer và footer; ưu tiên monochrome/currentColor và phải rõ ở 28–40px.
 - Không dùng ký tự Unicode để giả navigation icon, arrow, chevron, external-link hoặc interaction.
 - UI icon nhỏ dùng một SVG family, ưu tiên `currentColor`.
 - Icon nổi bật có thể dùng transparent PNG hoặc CDN asset ổn định; centralize URL/reference.

@@ -22,24 +22,28 @@ Tạo giao diện calm, neutral-first, premium, personal, editorial, human-autho
 
 ## Rule không được thương lượng
 
-- Neutral chiếm phần lớn giao diện; accent duy nhất là muted slate blue hoặc dusty indigo và chỉ xuất hiện tiết chế.
+- Neutral chiếm phần lớn giao diện. Không ép một brand accent xuyên suốt; chỉ dùng semantic micro-color cho domain dot, status, topic tag, focus và social brand khi có ý nghĩa.
 - Không dùng teal, xanh lá, coral, đỏ, cam mạnh, ochre/gold hoặc nâu làm brand color chủ đạo.
 - Không dùng square grid, graph-paper hay technical grid phủ background.
 - Không lặp công thức card + badge + uppercase label + title + description + arrow ở mọi section.
 - Desktop header đúng một hàng, `sticky`, gắn với trang, search nằm đúng tâm và không có hình thức floating pill/card.
 - Left sidebar là blog navigation; active state nhẹ, không có thick left border hay vertical accent bar.
-- Homepage content-first: intro gọn, topic shelf, journal, notes, labs.
+- Homepage content-first theo thứ tự: Exam Practice, topic tags, featured journal, recent notes, recent lab. Không dùng giant intro hero.
+- Exam Practice là feature chính nhưng không được giống LMS/dashboard; desktop giữ `2 × 2` với domain entry editorial, tránh nested card soup, KPI và progress.
+- Topic tags là secondary navigation hiển thị trực tiếp, show tất cả và wrap tự nhiên; left sidebar không lặp lại cùng topic taxonomy.
+- Không dùng equal-card grid khi typography, divider và whitespace đã đủ tạo hierarchy. Mỗi loại content phải có section rhythm riêng.
 - Không dùng emoji làm UI icon, ngoại trừ emoji nhỏ trong AWS service/topic tag.
 - Không dùng ký tự Unicode để giả icon hoặc arrow; dùng asset thật hoặc một SVG family thống nhất.
 - Profile có identity căn giữa, GitHub và LinkedIn cùng hàng, CV là text link căn giữa.
 - Feature card phải theme-aware: light mode không dùng giant dark panel; dark surface không được hard-code làm surface chung cho cả hai theme.
+- Impeccable có thể hỗ trợ `distill`, `layout`, `typeset` và `polish`, nhưng không được override visual identity hoặc source local của project.
 - `globals.css` chỉ chứa reset, base, theme variable, token và rule thực sự global.
 
 ## Định tuyến reference
 
 - Đọc `references/visual-language.md` khi làm mood, màu, background, human-authored principle, icon, imagery hoặc visual reference.
 - Đọc `references/typography-hierarchy.md` khi làm typography, copy, hierarchy, metadata hoặc content density.
-- Đọc `references/layout-responsive.md` khi làm header, 3-column layout, sidebar, topic shelf, profile, footer, sticky behavior hoặc responsive.
+- Đọc `references/layout-responsive.md` khi làm header, 3-column layout, sidebar, topic tags, profile, footer, sticky behavior hoặc responsive.
 - Đọc `references/components-elevation-motion.md` khi làm card, service tag, article tag, button, shadow, elevation, hover, motion, icon asset hoặc CSS architecture.
 - Đọc `references/review-checklist.md` khi review screenshot/source và trước khi chốt implementation.
 
