@@ -1,0 +1,23 @@
+.topic-strip { margin-top: 18px; padding: 0 2px 18px; border-bottom: 1px solid var(--line); }
+.topic-strip-label { display: block; margin-bottom: 8px; color: var(--faint); font-size: 10px; font-weight: 590; }
+.notebook-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.notebook-filters a { --topic-surface: var(--surface-2); min-height: 30px; display: inline-flex; align-items: center; gap: 6px; padding: 5px 9px; border-radius: 8px; background: var(--topic-surface); color: color-mix(in srgb, var(--ink) 84%, var(--muted)); font: 590 10px/1 var(--font-geist-mono), monospace; transition: transform var(--motion-fast), background-color var(--motion-fast), color var(--motion-fast), box-shadow var(--motion-base); }
+.notebook-filters a:hover { transform: translateY(-1px); background: color-mix(in srgb, var(--topic-surface) 94%, var(--ink)); color: var(--ink); box-shadow: 0 3px 8px rgb(29 32 39 / 0.07); }
+.notebook-filters .tone-cyan { --topic-surface: var(--topic-cyan); }
+.notebook-filters .tone-yellow { --topic-surface: var(--topic-yellow); }
+.notebook-filters .tone-orange { --topic-surface: var(--topic-orange); }
+.notebook-filters .tone-lilac { --topic-surface: var(--topic-lilac); }
+.notebook-filters .tone-blue { --topic-surface: var(--topic-blue); }
+.notebook-filters .tone-mint { --topic-surface: var(--topic-mint); }
+.notebook-filters .tone-amber { --topic-surface: var(--topic-amber); }
+.service-emoji { font-family: "Segoe UI Emoji", "Apple Color Emoji", sans-serif; font-size: 11px; line-height: 1; opacity: 0.82; filter: saturate(0.82); }
+.notebook-filters small { margin-left: 1px; color: color-mix(in srgb, currentColor 58%, transparent); font: 540 9px/1 var(--font-geist-mono), monospace; }
+.tag-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { display: inline-flex; padding: 4px 7px; border: 1px solid transparent; border-radius: 6px; background: color-mix(in srgb, var(--surface-2) 82%, var(--surface)); color: var(--muted); font: 550 10px/1.2 var(--font-geist-mono), monospace; transition: background-color var(--motion-fast), color var(--motion-fast); }
+.tag:hover { background: var(--surface-2); color: var(--ink); }
+
+[data-theme="dark"] .service-emoji { opacity: 0.78; filter: grayscale(0.12) saturate(0.72); }
+
+@media (max-width: 560px) {
+  .topic-strip { padding-bottom: 18px; }
+}

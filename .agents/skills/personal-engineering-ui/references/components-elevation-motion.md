@@ -1,217 +1,165 @@
-# Components, Elevation, Shadow & Motion
+# Component, elevation, motion và CSS
 
-## 1. Nguyên tắc card
+## 1. Chống card soup
 
-Không phải mọi block đều cần card.
+Không phải mọi block đều cần card. Featured article, lab có ảnh, profile và search dialog có thể dùng card. Recent notes, archive, activity và metadata list nên ưu tiên divider hoặc list row.
 
-Dùng card cho:
-- featured post;
-- post preview có image;
-- lab preview;
-- profile/about;
-- search result nổi bật;
-- special callout.
+Không lặp card + badge + uppercase label + title + description + action icon với cùng radius và spacing. Mỗi loại nội dung cần treatment phù hợp với vai trò của nó.
 
-Dùng divider/list row cho:
-- recent notes;
-- archive;
-- compact activity;
-- simple metadata lists.
+## 2. Surface, shadow và radius
 
-### Post card mặc định
+Card quan trọng nên đẹp nhờ surface, layered shadow, spacing và typography; không dùng border kín làm outline chính.
 
-Đối với post card quan trọng, ưu tiên **surface + shadow**, không dùng border kín làm outline chính.
-
-Light mode direction:
+Light mode tham khảo:
 
 ```css
 --shadow-card-rest:
-  0 1px 2px rgba(16, 24, 20, 0.05),
-  0 8px 24px rgba(16, 24, 20, 0.06);
+  0 1px 2px rgb(29 32 39 / 0.04),
+  0 8px 24px rgb(29 32 39 / 0.06);
 
 --shadow-card-hover:
-  0 2px 4px rgba(16, 24, 20, 0.06),
-  0 14px 36px rgba(16, 24, 20, 0.10);
+  0 2px 4px rgb(29 32 39 / 0.05),
+  0 14px 36px rgb(29 32 39 / 0.09);
 ```
 
-Dark mode direction:
+Dark mode tham khảo:
 
 ```css
 --shadow-card-rest:
-  0 1px 2px rgba(0, 0, 0, 0.26),
-  0 10px 26px rgba(0, 0, 0, 0.22);
+  0 1px 2px rgb(0 0 0 / 0.26),
+  0 10px 26px rgb(0 0 0 / 0.22);
 
 --shadow-card-hover:
-  0 2px 4px rgba(0, 0, 0, 0.30),
-  0 16px 38px rgba(0, 0, 0, 0.30);
+  0 2px 4px rgb(0 0 0 / 0.30),
+  0 16px 38px rgb(0 0 0 / 0.30);
 ```
 
-Các giá trị là baseline, có thể tinh chỉnh theo background thực tế.
+Shadow phải mềm, nhiều layer và opacity thấp. Không dùng giant shadow, glow hoặc cùng một elevation cho mọi component.
 
-### Shadow quality rules
+### Feature card theo theme và SAA-C03 Exam Practice
 
-- shadow phải mềm, rộng, opacity thấp;
-- tránh một shadow đen duy nhất với opacity cao;
-- dùng 2 layer nhỏ + lớn để có depth tự nhiên;
-- không để mọi component cùng elevation;
-- shadow không được làm card giống modal đang nổi khỏi trang.
+Feature card phải khai báo surface, text, metadata, tile và CTA theo từng theme; không hard-code một dark surface rồi dùng cho cả light và dark mode.
 
-## 2. Radius
+- Light mode dùng white, cream hoặc light warm gray. Tạo chiều sâu bằng một contact shadow rất nhẹ kết hợp ambient shadow rộng hơn, opacity thấp; không dùng mảng charcoal lớn để tạo hierarchy.
+- Dark mode được dùng charcoal hoặc near-black. Tile bên trong sáng hơn outer surface một chút để tách lớp mà không cần border gắt.
+- SAA-C03 Exam Practice giữ composition compact và grid `2 × 2` trên desktop. Không kéo trở lại thành giant hero hoặc bốn hàng dọc.
+- Mỗi domain tile phải có context theo thứ tự `index + semantic dot + DOMAIN n`; index không được đứng trơ trọi như placeholder.
+- Màu domain chỉ xuất hiện ở dot nhỏ. Không tô nền tile theo từng domain, không glow và không biến cụm này thành dashboard nhiều màu.
+- Elevation của domain tile luôn thấp hơn container chính; hover chỉ nâng `1px` và tăng shadow nhẹ.
 
-Baseline:
+Radius tham khảo:
 
 ```text
-small controls/tag      8–10px
-post/card              12–16px
-large media            14–18px
-pill                    999px chỉ khi thực sự cần pill
+Control và service tag    8–10px
+Article tag                5–7px
+Post và profile card     12–16px
+Large media              14–18px
 ```
 
-Không dùng radius 20–30px cho tất cả mọi thứ.
+Chỉ dùng pill radius khi hình dạng pill có ý nghĩa. Không dùng radius 20–30px cho mọi thứ.
 
-## 3. Post card hover
+## 3. Service/topic tag
 
-Hover nên sang và nhỏ:
+Service/topic tag thuộc editorial topic shelf, không phải generic Material chip hay dashboard filter.
+
+- Natural width, consistent height và wrap thành nhiều hàng.
+- Padding dọc khoảng 6–8px, ngang khoảng 9–12px.
+- Icon, label và count cách nhau khoảng 7–8px.
+- Monospace 11–12px hoặc sans nhỏ nếu hợp hierarchy.
+- Surface neutral, border cực nhẹ hoặc không border.
+- Tint giữa các service chỉ khác rất nhẹ và saturation thấp.
+- Count muted hơn label.
+
+Ngoại lệ: service/topic tag được dùng emoji nhỏ ở đầu. Emoji không được lớn hoặc nổi hơn label.
+
+Hover chỉ nâng khoảng `translateY(-1px)`, tăng shadow nhẹ và thêm accent tint rất nhỏ trong 150–180ms. Active state dùng accent-soft, không neon và không đổi cả tag thành màu bão hòa.
+
+## 4. Article tag
+
+Article tag như `VPC`, `S3`, `SAA-C03` phải khác service/topic tag:
+
+- nhỏ hơn, neutral hơn và low contrast;
+- không emoji;
+- padding khoảng 4–7px;
+- radius khoảng 5–7px;
+- dùng filled surface nhẹ hoặc outline gần như không thấy;
+- không dùng màu riêng cho từng tag;
+- chỉ đổi accent rất nhẹ khi hover.
+
+Article tag hỗ trợ metadata và không được tranh attention với title.
+
+## 5. Button, link và action indicator
+
+Primary button dùng accent tiết chế và shadow rất nhỏ. Secondary action ưu tiên text, ghost hoặc neutral surface; không dùng viền dày.
+
+CTA trong article/list thường là text link. Nếu cần arrow hoặc external-link indicator, dùng SVG/PNG asset thật từ hệ icon thống nhất; không dùng ký tự Unicode hoặc text để giả icon. Không phải row hay section nào cũng cần action indicator.
+
+## 6. Profile action
+
+GitHub và LinkedIn là hai compact button cùng hàng, cùng visual weight và dùng brand icon phù hợp. CV là text link căn giữa ở dòng riêng, có underline tinh tế và khoảng cách riêng; CV không được dùng cùng treatment với social button.
+
+## 7. Header elevation
+
+Sticky header phải gắn với trang. Dùng surface solid hoặc hơi translucent, border-bottom nhẹ và shadow rất nhỏ nếu cần:
 
 ```css
-transform: translateY(-2px);
-box-shadow: var(--shadow-card-hover);
-transition:
-  transform 180ms cubic-bezier(.2,.7,.2,1),
-  box-shadow 220ms cubic-bezier(.2,.7,.2,1),
-  background-color 180ms ease;
+position: sticky;
+top: 0;
+box-shadow:
+  0 1px 0 rgb(29 32 39 / 0.03),
+  0 8px 20px rgb(29 32 39 / 0.025);
 ```
 
-Nếu card có image:
+Backdrop blur nhẹ được phép. Cấm outer radius lớn, khoảng hở quanh header, glassmorphism rõ và shadow khiến header giống floating card.
 
-```css
-image transform: scale(1.012–1.02);
-transition: transform 350–500ms cubic-bezier(.2,.7,.2,1);
-```
+## 8. Hover và motion
 
-Không scale cả card 1.05. Không bounce.
-
-Có thể thêm micro-detail:
-- arrow CTA dịch 2–3px sang phải;
-- metadata accent đổi nhẹ;
-- subtle highlight gradient 2–4% chỉ khi phù hợp.
-
-## 4. Tags / filter chips
-
-Tag cần technical/editorial hơn Material chip.
-
-Ví dụ label:
+Motion phải nhỏ, mượt và có mục đích:
 
 ```text
-VPC · 14
-S3 · 12
-EC2 · 09
+Micro hover       150–180ms
+Card elevation    180–240ms
+Image hover       350–500ms
+Menu/dropdown     180–260ms
 ```
 
-Style baseline:
-- mono 11–12px;
-- padding 7–10px ngang, 5–7px dọc;
-- background surface nhẹ;
-- border rất subtle hoặc không border nếu shadow/surface đủ phân tách;
-- radius 8–10px, không bắt buộc pill.
+Cho phép `translateY(-1px)` đến `translateY(-2px)`, image scale khoảng `1.01–1.02`, color shift nhẹ, shadow tăng nhẹ hoặc icon asset dịch 2–3px.
 
-Hover:
-- translateY(-1px) tùy context;
-- background +3–5% contrast;
-- text/accent mạnh hơn;
-- 140–180ms.
+Không dùng bounce, spring mạnh, rotate, glow, parallax, scale lớn hoặc animation chạy liên tục. Không animate mọi paragraph. Luôn tôn trọng `prefers-reduced-motion`; hover không được là cách duy nhất biểu đạt state và `focus-visible` phải rõ.
 
-Active:
-- accent surface rõ nhưng không neon;
-- count vẫn muted hơn label.
+## 9. Icon asset
 
-## 5. Button
+- Không dùng ký tự Unicode để giả navigation icon, arrow, chevron, external-link hoặc interaction.
+- UI icon nhỏ dùng một SVG family, ưu tiên `currentColor`.
+- Icon nổi bật có thể dùng transparent PNG hoặc CDN asset ổn định; centralize URL/reference.
+- Không mix ngẫu nhiên filled, outline, emoji và nhiều family.
+- Emoji chỉ được xuất hiện trong service/topic tag.
 
-Primary:
-- solid accent;
-- shadow rất nhỏ nếu cần;
-- hover sáng/tối hơn nhẹ + translateY(-1px);
-- active translateY(0) hoặc scale 0.99.
+## 10. CSS architecture
 
-Secondary:
-- text/ghost/surface;
-- không viền dày.
-
-CTA trong article/list thường nên là text link + arrow thay vì button lớn.
-
-## 6. Header elevation
-
-Header không cần shadow khi ở top nếu background đã tách tốt.
-
-Khi sticky/scrolled:
-
-```css
-box-shadow: 0 1px 0 rgba(..., .05), 0 8px 24px rgba(..., .04);
-```
-
-Có thể dùng backdrop blur nhẹ nếu background translucent, nhưng tránh glassmorphism rõ rệt.
-
-## 7. Motion system
-
-Duration baseline:
+`globals.css` chỉ chứa reset, base style, theme variable, design token và rule thực sự global. Component-specific CSS phải tách theo architecture hiện tại, ví dụ:
 
 ```text
-micro hover       140–180ms
-card elevation    180–240ms
-image hover       350–500ms
-menu/dropdown     180–260ms
-page reveal       300–500ms
+src/styles/
+  tokens.css
+  header.css
+  sidebar-left.css
+  sidebar-right.css
+  homepage.css
+  tags.css
+  footer.css
 ```
 
-Easing ưu tiên smooth/non-bouncy:
+Hoặc colocate CSS với component nếu project đã theo cách đó. Ưu tiên CSS class rõ nghĩa, explicit style và reusable token. Centralize colors, shadow, radius, spacing và transition duration.
 
-```css
-cubic-bezier(.2,.7,.2,1)
-ease-out
-```
+Tránh inline style hàng loạt, giant style object trong TSX, selector quá sâu, duplicated color/shadow, arbitrary spacing và utility soup khó đọc. Không over-engineer thành một design system lớn nếu project chưa cần.
 
-Tránh:
-- spring/bounce cho navigation chính;
-- animation liên tục chỉ để trang “sống”;
-- parallax mạnh;
-- rotate/scale lớn khi hover;
-- stagger quá dài khiến user phải chờ.
+## 11. Thứ tự ưu tiên khi làm giao diện “sang”
 
-## 8. Entrance animation
-
-Có thể dùng cho featured content hoặc page section:
-
-```text
-opacity 0 → 1
-translateY 6–10px → 0
-300–420ms
-```
-
-Stagger nhỏ 30–60ms giữa các item nếu cần.
-
-Không animate mọi paragraph.
-
-## 9. Accessibility / reduced motion
-
-Luôn hỗ trợ:
-
-```css
-@media (prefers-reduced-motion: reduce) {
-  /* bỏ translate/scale/reveal không cần thiết */
-}
-```
-
-Hover không được là cách duy nhất biểu đạt state; focus-visible phải rõ.
-
-## 10. “Sang” nghĩa là gì trong skill này
-
-“Sang” không đồng nghĩa với nhiều shadow/blur/gradient.
-
-Ưu tiên theo thứ tự:
-1. typography đẹp;
-2. hierarchy rõ;
-3. spacing chuẩn;
-4. surface/elevation tự nhiên;
-5. icon thống nhất;
-6. motion nhỏ và mượt;
-7. decoration sau cùng.
+1. Typography.
+2. Hierarchy.
+3. Spacing.
+4. Surface và elevation.
+5. Icon nhất quán.
+6. Motion nhỏ.
+7. Decoration sau cùng.

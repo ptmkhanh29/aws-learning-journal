@@ -2,7 +2,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, BookOpenText, Flask, Target } from "@phosphor-icons/react/dist/ssr";
 import { journalEntries, type JournalEntry } from "@/data/journal";
-import { notes } from "@/data/notes";
 import { labs } from "@/data/labs";
 import { serviceGroups, type LearningState } from "@/data/aws-services";
 import { domainScores, practiceStats, recurringMistakes } from "@/data/practice";
@@ -20,21 +19,6 @@ function SectionHeading({ title, link, href }: { title: string; link?: string; h
 function JournalRow({ entry, locale, compact = false }: { entry: JournalEntry; locale: Locale; compact?: boolean }) {
   const d = dictionary[locale];
   return <article className={`journal-row ${compact ? "compact" : ""}`}><time>{entry.month[locale].split(" ")[0]} {entry.date}</time><div><div className="entry-type">{entry.type}</div><h3>{text(entry.title, locale)}</h3>{compact ? null : <p>{text(entry.excerpt, locale)}</p>}<div className="entry-footer"><div className="tag-row">{entry.tags.map((tag) => <Tag key={tag}>{tag}</Tag>)}</div><Link href={`/${locale}/journal`}>{d.read}<ArrowRight size={16} /></Link></div></div></article>;
-}
-
-export function HomePage({ locale }: { locale: Locale }) {
-  const vi = locale === "vi";
-  const d = dictionary[locale];
-  return <>
-    <section className="hero wide-shell"><div className="hero-copy"><p className="kicker">{vi ? "Personal cloud notebook" : "Personal cloud notebook"}</p><h1>{vi ? "Học cloud bằng cách ghi lại điều mình từng hiểu sai." : "Learning cloud by keeping track of what I got wrong."}</h1><p>{vi ? "Ghi chú từ những điều tôi học, xây dựng, hiểu nhầm rồi cuối cùng cũng hiểu ra." : "Notes from the things I learn, build, misunderstand, and eventually figure out."}</p><div className="current-study"><span>{vi ? "Đang học" : "Currently studying"}</span><strong>AWS SAA-C03</strong></div><div className="button-row"><Link className="button" href={`/${locale}/journal`}>{vi ? "Bài mới nhất" : "Latest entry"}<ArrowRight size={18} /></Link><Link className="button button-secondary" href={`/${locale}/about`}>{vi ? "Hành trình của tôi" : "My journey"}</Link></div></div><figure className="hero-image"><Image src="/images/journal-desk.webp" alt={vi ? "Bàn học với sổ tay vẽ kiến trúc cloud" : "Study desk with a notebook of cloud architecture sketches"} width={1536} height={1024} priority sizes="(max-width: 860px) 100vw, 50vw" /></figure></section>
-    <div className="content-shell home-sections">
-      <section className="learning-section"><SectionHeading title={vi ? "Hiện tôi đang học" : "Currently learning"} /><div className="learning-copy"><div><h3>AWS Solutions Architect Associate</h3><p>{vi ? "Trọng tâm tuần này: VPC, S3 và thiết kế khả năng phục hồi." : "This week's focus: VPC, S3, and resilient design."}</p></div><div className="learning-numbers">{[["Networking", 78], ["Storage", 72], ["Compute", 64], ["Database", 51]].map(([label, value]) => <div key={label}><strong>{value}%</strong><span>{label}</span></div>)}</div></div></section>
-      <section><SectionHeading title={vi ? "Nhật ký gần đây" : "Latest journal"} link={d.browse} href={`/${locale}/journal`} /><div className="journal-list">{journalEntries.slice(0, 3).map((entry) => <JournalRow key={entry.slug} entry={entry} locale={locale} compact />)}</div></section>
-      <section className="knowledge-snapshot"><SectionHeading title={vi ? "Những gì tôi đã học" : "What I have learned"} link={vi ? "Xem ghi chú AWS" : "Browse AWS notes"} href={`/${locale}/aws`} /><div className="domain-index">{serviceGroups.map((group) => <Link key={group.domain.en} href={`/${locale}/aws`}><span>{text(group.domain, locale)}</span><strong>{group.noteCount}</strong><small>{vi ? "ghi chú" : "notes"}</small></Link>)}</div></section>
-      <section><SectionHeading title={vi ? "Lab gần đây" : "Recent labs"} link={d.browse} href={`/${locale}/labs`} /><div className="featured-lab"><Image src="/images/network-lab.webp" alt={vi ? "Thiết bị mạng cho một bài lab kiến trúc" : "Network equipment used for an architecture lab"} width={1536} height={1024} sizes="(max-width: 800px) 100vw, 42vw" /><div><p className="kicker">EC2 / ALB / RDS</p><h3>{text(labs[0].title, locale)}</h3><p>{text(labs[0].description, locale)}</p><Link href={`/${locale}/labs`}>{vi ? "Xem lab" : "View lab"}<ArrowRight size={17} /></Link></div></div></section>
-      <section><SectionHeading title={vi ? "Ghi chú mới" : "Recent notes"} link={d.browse} href={`/${locale}/notes`} /><div className="recent-notes">{notes.slice(0, 4).map((note) => note.slug === "s3-storage-classes" ? <Link key={note.slug} href={`/${locale}/notes/${note.slug}`}><span>{text(note.title, locale)}</span><time>{note.date}</time></Link> : <div className="recent-note-static" key={note.slug}><span>{text(note.title, locale)}</span><time>{note.date}</time></div>)}</div></section>
-    </div>
-  </>;
 }
 
 export function JournalPage({ locale }: { locale: Locale }) {

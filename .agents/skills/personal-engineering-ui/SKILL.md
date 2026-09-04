@@ -1,78 +1,48 @@
 ---
 name: personal-engineering-ui
-description: Thiết kế, review và triển khai UI cho personal engineering blog / technical knowledge journal theo phong cách editorial, technical, cá nhân và sang. Dùng khi cần redesign hoặc đánh giá giao diện, typography, hierarchy, density, grid, spacing, sidebar/header, tag filter, post/lab cards, icon SVG, shadow/elevation, hover/motion, light/dark mode, responsive; hoặc khi cần tạo design spec, prompt cho Codex, hay code UI cho AWS Learning Journal và các website kỹ thuật có cùng visual language.
+description: Thiết kế, review và triển khai UI dành riêng cho AWS Learning Journal. Dùng khi task liên quan visual direction, typography, layout, header, sidebar, homepage, tag, card, profile, footer, dark mode, responsive hoặc CSS của project này.
 ---
 
-# Personal Engineering UI
+# UI cho AWS Learning Journal
+
+Đây là skill UI riêng của **AWS Learning Journal**: blog học AWS cá nhân, engineering notebook, learning journal và portfolio của một kỹ sư. Toàn bộ hướng dẫn phải dùng tiếng Việt; chỉ giữ thuật ngữ kỹ thuật bằng tiếng Anh khi giúp tránh mơ hồ.
 
 ## Mục tiêu
 
-Thiết kế giao diện có chất riêng của một kỹ sư: editorial + engineering notebook + technical blog. Ưu tiên nội dung, khả năng đọc, sự tinh tế và cảm giác cá nhân; tránh biến website thành SaaS landing page, admin dashboard, AWS Console clone hoặc template blog vô danh.
+Tạo giao diện calm, neutral-first, premium, personal, editorial, human-authored và technical nhưng không mang cảm giác dashboard. Người xem phải nhận ra đây là sổ tay được một kỹ sư thật viết, sắp đặt và chăm chút.
 
-Ngôn ngữ hướng dẫn của skill là tiếng Việt. Giữ nguyên các thuật ngữ kỹ thuật quen thuộc bằng tiếng Anh khi chúng chính xác hơn, ví dụ `hover`, `shadow`, `elevation`, `grid`, `tag`, `responsive`, `Server Component`.
+## Quy trình
 
-## Quy trình bắt buộc
+1. Đọc screenshot, source và visual hierarchy hiện tại trước khi đề xuất hoặc sửa UI.
+2. Giữ architecture, data flow, route, auth, behavior và content structure không liên quan.
+3. Không tự redesign ngoài visual language đã khóa nếu người dùng chỉ yêu cầu refine.
+4. Chỉ đọc các reference liên quan theo bảng định tuyến bên dưới.
+5. Khi code, dùng CSS token và class có nghĩa; tách component-specific CSS khỏi `globals.css`.
+6. Trước khi hoàn tất, dùng `references/review-checklist.md` để rà lại phạm vi đã làm.
 
-1. Xác định vai trò trang: homepage, listing, article, lab, search, auth/admin hay profile.
-2. Nếu có screenshot hoặc source hiện tại, đọc cấu trúc và visual hierarchy trước khi đề xuất thay đổi.
-3. Giữ nguyên architecture và behavior không liên quan; redesign UI không được tùy tiện đổi data flow, auth, route hoặc stack.
-4. Áp dụng các rule trong các tài liệu tham chiếu bên dưới.
-5. Nếu người dùng đang chốt direction, ưu tiên phác layout/spec rõ ràng trước khi code.
-6. Nếu code, dùng token/variable có hệ thống; không hard-code spacing, radius, shadow và transition ngẫu nhiên ở từng component.
-7. Trước khi hoàn tất, chạy checklist trong `references/review-checklist.md`.
+## Rule không được thương lượng
 
-## Visual identity cốt lõi
+- Neutral chiếm phần lớn giao diện; accent duy nhất là muted slate blue hoặc dusty indigo và chỉ xuất hiện tiết chế.
+- Không dùng teal, xanh lá, coral, đỏ, cam mạnh, ochre/gold hoặc nâu làm brand color chủ đạo.
+- Không dùng square grid, graph-paper hay technical grid phủ background.
+- Không lặp công thức card + badge + uppercase label + title + description + arrow ở mọi section.
+- Desktop header đúng một hàng, `sticky`, gắn với trang, search nằm đúng tâm và không có hình thức floating pill/card.
+- Left sidebar là blog navigation; active state nhẹ, không có thick left border hay vertical accent bar.
+- Homepage content-first: intro gọn, topic shelf, journal, notes, labs.
+- Không dùng emoji làm UI icon, ngoại trừ emoji nhỏ trong AWS service/topic tag.
+- Không dùng ký tự Unicode để giả icon hoặc arrow; dùng asset thật hoặc một SVG family thống nhất.
+- Profile có identity căn giữa, GitHub và LinkedIn cùng hàng, CV là text link căn giữa.
+- Feature card phải theme-aware: light mode không dùng giant dark panel; dark surface không được hard-code làm surface chung cho cả hai theme.
+- `globals.css` chỉ chứa reset, base, theme variable, token và rule thực sự global.
 
-Luôn hướng tới:
+## Định tuyến reference
 
-- personal, technical, editorial, precise;
-- đẹp và sang nhưng không luxury phô trương;
-- có personality nhưng không gimmicky;
-- medium density, content-first;
-- subtle technical details: grid nhẹ, mono metadata, architecture sketch, code/diagram accents;
-- motion nhỏ, mượt, có mục đích;
-- hierarchy rõ hơn decoration.
+- Đọc `references/visual-language.md` khi làm mood, màu, background, human-authored principle, icon, imagery hoặc visual reference.
+- Đọc `references/typography-hierarchy.md` khi làm typography, copy, hierarchy, metadata hoặc content density.
+- Đọc `references/layout-responsive.md` khi làm header, 3-column layout, sidebar, topic shelf, profile, footer, sticky behavior hoặc responsive.
+- Đọc `references/components-elevation-motion.md` khi làm card, service tag, article tag, button, shadow, elevation, hover, motion, icon asset hoặc CSS architecture.
+- Đọc `references/review-checklist.md` khi review screenshot/source và trước khi chốt implementation.
 
-Không dùng:
+## Phạm vi đầu ra
 
-- emoji làm UI icon;
-- glassmorphism đại trà;
-- gradient neon/cyberpunk;
-- shadow dày kiểu floating dashboard;
-- card viền kín khắp nơi;
-- nhiều font/icon family không thống nhất;
-- CTA marketing kiểu “Get started today” nếu không có lý do sản phẩm;
-- section quá cao nhưng ít nội dung.
-
-## Layout contract cho AWS Learning Journal
-
-Khi làm project AWS Learning Journal, coi các rule sau là hard constraints trừ khi người dùng yêu cầu đổi:
-
-- Desktop header đúng **một hàng**, không wrap.
-- Header rộng hơn content container bên dưới.
-- Search bar nằm **đúng tâm thị giác** của header, không chỉ nằm giữa khoảng trống còn lại.
-- Bên trái header: SVG logo + tên website.
-- Bên phải header: Log in, Sign up, light/dark, VI/EN.
-- Left sidebar thiên về content navigation tự nhiên của blog: Journal, Notes, Labs, Tips, Docs, Practice; sau đó mới tới Collections/Topics.
-- Không dùng danh sách dài EC2/S3/VPC/RDS như navigation chính ở sidebar.
-- Main column bắt đầu bằng bộ lọc tag đẹp: S3, EC2, VPC, IAM, RDS, Lambda, Route 53... rồi mới đến `Latest from the Journal`.
-- Right sidebar có About/Profile, GitHub, **CV**, `Now/Currently studying`, current focus và activity nhỏ.
-- Public UI không được có cảm giác SaaS dashboard.
-
-## Cách dùng tài liệu tham chiếu
-
-- Đọc `references/visual-language.md` khi chọn mood, màu, texture, icon và phong cách tổng thể.
-- Đọc `references/typography-hierarchy.md` khi làm text, type scale, metadata, hierarchy và content density.
-- Đọc `references/layout-responsive.md` khi dựng header, sidebar, grid, spacing và breakpoint.
-- Đọc `references/components-elevation-motion.md` khi làm card, tag, button, shadow, hover, motion, light/dark elevation.
-- Đọc `references/review-checklist.md` khi review screenshot/source hoặc trước khi chốt implementation.
-
-## Output mong đợi
-
-Tùy yêu cầu, có thể tạo một trong các dạng sau:
-
-- **UI critique**: chỉ ra vấn đề hierarchy, density, spacing, typography, personality và interaction; ưu tiên vấn đề có impact cao.
-- **Markdown layout/spec**: vẽ layout gần tỷ lệ thật, ghi width/gutter/behavior rõ ràng.
-- **Codex prompt**: mô tả mục tiêu, hard constraints, file/architecture boundary, acceptance criteria và phần không được đổi.
-- **Implementation**: code theo stack hiện tại, reusable component, token hóa visual system, mock/API-first nếu backend chưa sẵn sàng.
-- **Design QA**: so sánh kết quả với rule của skill và liệt kê vi phạm cụ thể.
+Có thể critique, viết spec, tạo prompt hoặc triển khai code cho AWS Learning Journal. Mọi đầu ra phải giữ cảm giác blog kỹ thuật cá nhân; không được đẩy giao diện về SaaS, dashboard, admin panel, docs template, AWS Console clone hoặc component-library demo.

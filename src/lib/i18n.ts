@@ -29,7 +29,7 @@ export const dictionary = {
     signout: "Sign out",
     read: "Read entry",
     browse: "Browse all",
-    footerLine: "Learning AWS, one mistake at a time.",
+    footerLine: "Learning AWS, writing down what I misunderstood, and correcting it as I go.",
     noResults: "No notes match that search yet.",
   },
   vi: {
@@ -49,7 +49,7 @@ export const dictionary = {
     signout: "Đăng xuất",
     read: "Đọc bài",
     browse: "Xem tất cả",
-    footerLine: "Học AWS, sửa từng hiểu lầm một.",
+    footerLine: "Học AWS, ghi lại những gì mình hiểu sai rồi sửa dần.",
     noResults: "Chưa có ghi chú nào khớp với từ khóa.",
   },
 } as const;

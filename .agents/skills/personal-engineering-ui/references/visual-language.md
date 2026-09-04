@@ -1,107 +1,73 @@
-# Visual Language
+# Ngôn ngữ thị giác
 
-## 1. Tính cách
+## 1. Bản sắc
 
-Visual language mặc định: **Editorial Engineering Notebook**.
+AWS Learning Journal là blog học AWS cá nhân, engineering notebook, kho kiến thức và portfolio. Visual identity phải calm, neutral-first, premium, editorial, human-authored và technical nhưng dễ đọc.
 
-Cảm giác mong muốn:
-- personal engineering journal;
-- technical nhưng dễ đọc;
-- modern indie developer;
-- quiet confidence;
-- có chi tiết riêng khi nhìn kỹ.
+Giao diện cần gợi cảm giác: “Đây là blog kỹ thuật và sổ tay học tập của một kỹ sư thật.” Tránh mọi tín hiệu của SaaS landing page, dashboard, admin panel, AWS Console clone, docs template, component-library demo hoặc website startup generic.
 
-Không được trông giống:
-- SaaS landing page;
-- admin dashboard;
-- corporate documentation portal;
-- AWS Console clone;
-- generic Tailwind template.
+## 2. Nguyên tắc human-authored
 
-## 2. Surface và background
+Không lặp một công thức component ở mọi section, đặc biệt là chuỗi card + badge + uppercase label + title + description + arrow với cùng radius và spacing.
 
-Light mode:
-- dùng warm off-white/paper thay vì pure white;
-- surface card sáng hơn nền một chút;
-- text near-black, không bắt buộc `#000`;
-- có thể dùng technical grid/noise rất nhẹ 2–4% contrast.
+Không phải section nào cũng cần card, badge, background riêng, border, button, arrow hoặc uppercase monospace. Dùng typography, whitespace, divider, alignment và khác biệt nhẹ giữa từng loại nội dung để tạo nhịp tự nhiên. Mỗi block chỉ nên có một visual anchor chính.
 
-Direction tham khảo, không phải mã màu bắt buộc:
+## 3. Hệ màu neutral-first
+
+Phần lớn giao diện dùng white, cream, near-black, charcoal và gray. Chỉ dùng một accent chính thuộc hướng muted slate blue, dusty indigo hoặc desaturated steel blue. Accent phải ít saturation, không chói và chỉ dành cho active state, link, focus, small label hoặc interaction nhỏ.
+
+Hướng tham khảo cho light mode:
 
 ```text
-background  #F5F5F1
-surface     #FAFAF7
-text        #171B19
-muted       #6E756F
-border      #DADDD7
-accent      #167C73
+background      #F4F3EF
+surface         #FBFAF7
+surface-muted   #ECEEF0
+text            #1B1C1F
+muted           #656970
+separator       #DFE1E4
+accent          #62708F
+accent-soft     #E6E9F0
 ```
 
-Dark mode:
-- deep charcoal, có thể hơi green-tinted;
-- không pure black nếu không có chủ ý;
-- surface tách nền bằng luminance + shadow/overlay tinh tế;
-- ảnh có thể giảm brightness nhẹ để không chói.
-
-Direction tham khảo:
+Hướng tham khảo cho dark mode:
 
 ```text
-background  #0E1311
-surface     #121815
-text        #E9ECE9
-muted       #89918C
-border      #252D29
-accent      #5DC5B7
+background      #111214
+surface         #181A1E
+surface-muted   #22252B
+text            #EFEDE8
+muted           #ADB0B7
+separator       #2B2E34
+accent          #929FBD
+accent-soft     #292F3E
 ```
 
-## 3. Grid / texture
+Đây là direction, không phải mã màu bắt buộc. Giữ contrast đủ đọc lâu và phân cấp surface bằng luminance tinh tế. Không dùng teal, xanh lá, coral, đỏ, cam mạnh, ochre/gold hoặc nâu làm brand color chủ đạo. Dark mode không được ngả nâu hoặc cam.
 
-Grid là signature detail, không phải background decoration lớn.
+AWS service/topic tag có thể dùng các tint cực nhẹ, nhưng tổng thể vẫn phải đọc như một hệ neutral thống nhất; không tạo rainbow chips.
 
-- line/grid mảnh, low contrast;
-- chỉ đủ thấy khi quan sát, không cạnh tranh với text;
-- tránh checker/grid contrast cao;
-- tránh noise nặng gây cảm giác ảnh JPEG bẩn.
+## 4. Background và texture
 
-Có thể dùng grid ở:
-- page background;
-- hero/feature area;
-- lab architecture canvas;
-- empty space giữa các module.
+Dùng background sạch, warm neutral và tonal variation nhẹ. Có thể thêm noise cực nhẹ nếu thực sự giúp chất liệu, nhưng phải gần như không nhận thấy.
 
-## 4. Iconography
+Cấm square grid, graph-paper, checker hoặc technical grid phủ toàn trang. Background không được cạnh tranh với nội dung.
 
-Hard rule: **không dùng emoji làm UI icon**.
+## 5. Icon và asset
 
-UI icon:
-- SVG;
-- một icon family duy nhất cho interface;
-- 16/18/20px là mặc định;
-- stroke khoảng 1.5–1.75;
-- `currentColor` nếu có thể;
-- monochrome mặc định.
+Rule chung: không dùng emoji làm UI icon. Ngoại lệ duy nhất là emoji nhỏ đứng trước label trong AWS service/topic tag; emoji chỉ là chi tiết phụ.
 
-AWS service icons được phép là family riêng.
+- Icon điều hướng và interaction dùng asset thật, ưu tiên một SVG family với `currentColor`.
+- Không dùng ký tự Unicode để giả arrow, external-link, chevron hoặc action indicator.
+- Icon nhỏ thường ở 16–20px, stroke và weight nhất quán.
+- Icon nổi bật có thể dùng transparent PNG hoặc asset từ CDN ổn định; centralize URL/reference thay vì rải rác.
+- AWS service icon được phép là một family riêng nhưng không được tạo color noise.
 
-Nếu dùng CDN trong prototype:
-- dùng một nguồn ổn định cho UI icons;
-- không lấy từng icon từ domain khác nhau;
-- khi production, ưu tiên self-host/copy asset nhỏ vào `public/icons` để giảm dependency runtime.
+## 6. Hình ảnh
 
-## 5. Color discipline
+Ưu tiên ảnh hoặc illustration có dấu vết cá nhân: architecture sketch, lab screenshot, terminal/code có chủ đích, notebook thật hoặc diagram. Hạn chế stock photo chung chung kiểu laptop, cà phê và bàn làm việc nếu không liên quan trực tiếp đến nội dung.
 
-- một accent chính + neutral system;
-- AWS icon có thể giữ brand color nhưng không biến toàn trang thành bảng màu AWS;
-- tag không cần mỗi service một màu;
-- hover/active dùng variation của accent, không dùng rainbow.
+## 7. Visual reference
 
-## 6. Imagery
+Reference chính là **morethan-log** để học cảm giác personal blog, content-first, left navigation, main feed và right profile. Reference phụ là premium technical UI, chỉ dùng để học shadow, surface, spacing, density và hover polish.
 
-Ưu tiên:
-- architecture sketch;
-- notebook thật;
-- terminal/code/lab screenshot có chủ đích;
-- diagrams;
-- môi trường kỹ thuật có dấu vết cá nhân.
-
-Hạn chế stock photo kiểu laptop + coffee + notebook nếu không liên quan trực tiếp đến nội dung.
+AWS Learning Journal phải có thiết kế riêng. Không copy chính xác branding, layout hoặc component của reference.

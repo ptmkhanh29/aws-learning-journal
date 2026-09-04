@@ -1,0 +1,25 @@
+.home-left, .home-right { position: sticky; top: 28px; }
+.home-nav-group + .home-nav-group { margin-top: 31px; }
+.home-nav-group h2 { margin: 0 0 11px; color: var(--accent); font: 650 10px/1.3 var(--font-geist-mono), monospace; letter-spacing: 0.11em; text-transform: uppercase; }
+.home-nav-group nav { display: grid; gap: 3px; }
+.home-nav-group a { min-height: 37px; display: grid; grid-template-columns: 20px 1fr; gap: 10px; align-items: center; padding: 6px 9px; border-radius: var(--radius-control); color: var(--muted); font-size: 13px; font-weight: 540; transition: color var(--motion-fast), background-color var(--motion-fast), transform var(--motion-fast); }
+.home-nav-group a:hover { background: color-mix(in srgb, var(--surface) 76%, transparent); color: var(--accent); transform: translateX(2px); }
+.home-nav-group:first-child a:first-child { background: var(--accent-soft); color: var(--ink); font-weight: 650; }
+.home-nav-group svg { color: currentColor; }
+.nav-index { width: 9px; height: 1px; margin-left: 4px; background: var(--line-strong); }
+.mobile-home-nav { display: none; }
+
+@media (max-width: 1180px) {
+  .home-left { grid-column: 1; grid-row: 1 / 3; }
+}
+
+@media (max-width: 780px) {
+  .home-left { position: static; grid-area: navigation; margin-bottom: 28px; }
+  .desktop-home-nav { display: none; }
+  .mobile-home-nav { display: block; }
+  .mobile-home-nav summary { min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 9px 12px; border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--surface); color: var(--muted); font-size: 13px; font-weight: 620; cursor: pointer; list-style: none; }
+  .mobile-home-nav summary::-webkit-details-marker { display: none; }
+  .mobile-home-nav[open] summary svg { transform: rotate(90deg); }
+  .mobile-home-nav > div { margin-top: 10px; padding: 18px; border-radius: var(--radius-control); background: var(--surface); box-shadow: var(--shadow-card-rest); }
+  .mobile-home-nav .home-nav-group + .home-nav-group { margin-top: 24px; }
+}
