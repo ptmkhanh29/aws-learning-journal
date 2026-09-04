@@ -1,0 +1,10 @@
+import type { LocalizedText } from "@/lib/i18n";
+
+export type Lab = { slug: string; title: LocalizedText; description: LocalizedText; services: string[]; date: string; status: "complete" | "revisit" | "planned"; difficulty: "intro" | "intermediate"; image?: string };
+
+export const labs: Lab[] = [
+  { slug: "multi-az-web", title: { en: "Multi-AZ Web Architecture", vi: "Kiến trúc web Multi-AZ" }, description: { en: "A resilient request path with load balancing, automatic replacement, and a managed relational database.", vi: "Luồng request có khả năng phục hồi với load balancing, tự động thay thế và cơ sở dữ liệu managed." }, services: ["EC2", "ALB", "RDS"], date: "Sep 01, 2026", status: "complete", difficulty: "intermediate", image: "/images/network-lab.webp" },
+  { slug: "private-s3-endpoint", title: { en: "Private S3 with a VPC Endpoint", vi: "Truy cập S3 riêng tư qua VPC Endpoint" }, description: { en: "Keep traffic on the AWS network and verify the route and bucket policy from both sides.", vi: "Giữ traffic trong mạng AWS và kiểm tra route cùng bucket policy từ hai phía." }, services: ["VPC", "S3"], date: "Aug 28, 2026", status: "revisit", difficulty: "intermediate" },
+  { slug: "static-cloudfront", title: { en: "Static Website with CloudFront", vi: "Website tĩnh với CloudFront" }, description: { en: "An origin-private distribution with caching behavior and a simple invalidation exercise.", vi: "Distribution với origin riêng tư, caching behavior và một bài thực hành invalidation đơn giản." }, services: ["S3", "CloudFront"], date: "Aug 21, 2026", status: "complete", difficulty: "intro" },
+  { slug: "serverless-api", title: { en: "A Small Serverless API", vi: "Một serverless API nhỏ" }, description: { en: "Trace one request through the gateway, function, and table with useful logs at each boundary.", vi: "Theo một request qua gateway, function và table với log hữu ích ở mỗi boundary." }, services: ["Lambda", "API Gateway", "DynamoDB"], date: "Planned", status: "planned", difficulty: "intermediate" },
+];

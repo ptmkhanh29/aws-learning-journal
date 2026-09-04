@@ -1,0 +1,167 @@
+{
+  "version": 1,
+  "skills": {
+    "amazon-bedrock": {
+      "source": "aws/agent-toolkit-for-aws",
+      "sourceType": "github",
+      "skillPath": "skills/core-skills/amazon-bedrock/SKILL.md",
+      "computedHash": "e374953e50976a4cac996ba61fd13d1d0349892599206638eba335a4904cdedb"
+    },
+    "aws-ai-ml": {
+      "source": "aws/agent-toolkit-for-aws",
+      "sourceType": "github",
+      "skillPath": "skills/core-skills/aws-ai-ml/SKILL.md",
+      "computedHash": "7a24ef7fb9a4e24ca9955fd6882a63eb6116e118488f09cbe78ac5e7e73f0e12"
+    },
+    "aws-auth": {
+      "source": "aws/agent-toolkit-for-aws",
+      "sourceType": "github",
+      "skillPath": "skills/core-skills/aws-auth/SKILL.md",
+      "computedHash": "0296ac06b9cd9f504c1f9578417390442a24d9c7fb0a28b1f0a7d868d9360437"
+    },
+    "aws-billing-and-cost-management": {
+      "source": "aws/agent-toolkit-for-aws",
+      "sourceType": "github",
+      "skillPath": "skills/core-skills/aws-billing-and-cost-management/SKILL.md",
+      "computedHash": "6dcc33ee4a3ed2ffd0d7f54f427b70551772eac344afebcb868ed24f22700736"
+    },
+    "aws-blocks": {
+      "source": "aws/agent-toolkit-for-aws",
+      "sourceType": "github",
+      "skillPath": "skills/core-skills/aws-blocks/SKILL.md",
+      "computedHash": "b772927935fca8c086efd8cc1f2d79a8e8e4d9fe90ad4da4bf5744263f364a31"
+    },
+    "aws-cdk": {
+      "source": "aws/agent-toolkit-for-aws",
+      "sourceType": "github",
+      "skillPath": "skills/core-skills/aws-cdk/SKILL.md",
+      "computedHash": "1954fe48c970aa84b4306df7fa9669228cf5dacfaf877e2d89f9c4c562693f57"
+    },
+    "aws-cloudformation": {
+      "source": "aws/agent-toolkit-for-aws",
+      "sourceType": "github",
+      "skillPath": "skills/core-skills/aws-cloudformation/SKILL.md",
+      "computedHash": "0ad2b47f959062df159bcc221987847faf86f4b5fff580d73cec142704447f87"
+    },
+    "aws-compute": {
+      "source": "aws/agent-toolkit-for-aws",
+      "sourceType": "github",
+      "skillPath": "skills/core-skills/aws-compute/SKILL.md",
+      "computedHash": "8997f8563a52552f896b91fb7d77f60a7a282c32bb34f28612c1b18dc7d4825e"
+    },
+    "aws-containers": {
+      "source": "aws/agent-toolkit-for-aws",
+      "sourceType": "github",
+      "skillPath": "skills/core-skills/aws-containers/SKILL.md",
+      "computedHash": "dd224a74ee85cc80d1b5fef71ea80b22afe6760d3b90fa8986b84b1101832fa4"
+    },
+    "aws-database": {
+      "source": "aws/agent-toolkit-for-aws",
+      "sourceType": "github",
+      "skillPath": "skills/core-skills/aws-database/SKILL.md",
+      "computedHash": "97023d6c213b6ba271ee85649d74c759fe50da2252e50b4830d0372d6356cc9b"
+    },
+    "aws-deployment": {
+      "source": "aws/agent-toolkit-for-aws",
+      "sourceType": "github",
+      "skillPath": "skills/core-skills/aws-deployment/SKILL.md",
+      "computedHash": "615b03e22a690405c0478193352425659b0187b127e27c6de964639734d8a512"
+    },
+    "aws-iam": {
+      "source": "aws/agent-toolkit-for-aws",
+      "sourceType": "github",
+      "skillPath": "skills/core-skills/aws-iam/SKILL.md",
+      "computedHash": "0e70bd920ada3a09bf3f04219a356038f345354f77138613a210e02f8cd8845d"
+    },
+    "aws-messaging-and-streaming": {
+      "source": "aws/agent-toolkit-for-aws",
+      "sourceType": "github",
+      "skillPath": "skills/core-skills/aws-messaging-and-streaming/SKILL.md",
+      "computedHash": "4af76f1e723f113c049617cff745b6921cae26ff610589ab314e67ef32fc8459"
+    },
+    "aws-networking": {
+      "source": "aws/agent-toolkit-for-aws",
+      "sourceType": "github",
+      "skillPath": "skills/core-skills/aws-networking/SKILL.md",
+      "computedHash": "879404785a6036fd3d758c9f01eb6e9b168a407c61850ea5094d81d904d41594"
+    },
+    "aws-observability": {
+      "source": "aws/agent-toolkit-for-aws",
+      "sourceType": "github",
+      "skillPath": "skills/core-skills/aws-observability/SKILL.md",
+      "computedHash": "23cdc5b3f8631569c9320fe64698d8e0f2680ca0dad7e1cb908bc6e0f2d77f7c"
+    },
+    "aws-sdk-js-v3-usage": {
+      "source": "aws/agent-toolkit-for-aws",
+      "sourceType": "github",
+      "skillPath": "skills/core-skills/aws-sdk-js-v3-usage/SKILL.md",
+      "computedHash": "a6fbe55fa8b60ba75e1496cb80e9afd5a306adc0c19f04e64e81d0e75f449c27"
+    },
+    "aws-sdk-python-usage": {
+      "source": "aws/agent-toolkit-for-aws",
+      "sourceType": "github",
+      "skillPath": "skills/core-skills/aws-sdk-python-usage/SKILL.md",
+      "computedHash": "4d5e328c6539ec7a48815db51c84febd9749817a10119d5e12f6aaddb32c7a1f"
+    },
+    "aws-sdk-swift-usage": {
+      "source": "aws/agent-toolkit-for-aws",
+      "sourceType": "github",
+      "skillPath": "skills/core-skills/aws-sdk-swift-usage/SKILL.md",
+      "computedHash": "08facd40fd8b2e7efb9dcebf85a2a72b1ff568fc6ada8047c2f3c6329723a258"
+    },
+    "aws-security": {
+      "source": "aws/agent-toolkit-for-aws",
+      "sourceType": "github",
+      "skillPath": "skills/core-skills/aws-security/SKILL.md",
+      "computedHash": "9bd897f5b0467aa13e4d5dbb4baa1c75428fd10ee734f09be071ac5fd1b7dce7"
+    },
+    "aws-serverless": {
+      "source": "aws/agent-toolkit-for-aws",
+      "sourceType": "github",
+      "skillPath": "skills/core-skills/aws-serverless/SKILL.md",
+      "computedHash": "c65751b5308dabdc64c0fc9e0ff66017dabebf7d1ee50daef8ad4ec6abbd3bbb"
+    },
+    "aws-storage": {
+      "source": "aws/agent-toolkit-for-aws",
+      "sourceType": "github",
+      "skillPath": "skills/core-skills/aws-storage/SKILL.md",
+      "computedHash": "e7592047f47689d87686638479078d147d4ab83c814772084dd08aabc982b5dd"
+    },
+    "cloudflare": {
+      "source": "cloudflare/skills",
+      "sourceType": "github",
+      "skillPath": "skills/cloudflare/SKILL.md",
+      "computedHash": "6f40bad7cb8529ee19b0f0cdd974b265fe7a0d104d61d066545b48f77ed42acf"
+    },
+    "design-taste-frontend": {
+      "source": "Leonxlnx/taste-skill",
+      "sourceType": "github",
+      "skillPath": "skills/taste-skill/SKILL.md",
+      "computedHash": "899b84384f74f540ea5284d9b2e9234e050998b42eacc805410b518d4226c0b3"
+    },
+    "humanizer": {
+      "source": "blader/humanizer",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "456120712f3020b0da940d57ca2b7840db0c83c6d2cf6d0dfa31296f3d29b31e"
+    },
+    "launch-with-aws": {
+      "source": "aws/agent-toolkit-for-aws",
+      "sourceType": "github",
+      "skillPath": "skills/core-skills/launch-with-aws/SKILL.md",
+      "computedHash": "05189764344d0e7849e32a5c996d09a167c4e8962d61a73b1ff12a1846bdf727"
+    },
+    "signing-in-to-aws": {
+      "source": "aws/agent-toolkit-for-aws",
+      "sourceType": "github",
+      "skillPath": "skills/core-skills/signing-in-to-aws/SKILL.md",
+      "computedHash": "37ad4e8d1971edc8a33d0437c7e950b90756ff5a626d8abb5562a7ee4565bed8"
+    },
+    "vercel-react-best-practices": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/react-best-practices/SKILL.md",
+      "computedHash": "ca7b0c0c6e5f2750043f7f0cd72d16ac4e2abc48f9b5500d047a4b77a2506212"
+    }
+  }
+}

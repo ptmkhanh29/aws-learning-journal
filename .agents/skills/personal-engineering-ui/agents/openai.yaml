@@ -1,0 +1,18 @@
+interface:
+  display_name: Personal Engineering UI
+  short_description: Thiết kế, review và triển khai UI cho personal engineering blog
+    / technical knowledge journal theo phong cách editorial, technical, cá nhân và
+    sang. Dùng khi cần redesign hoặc đánh giá giao diện, typography, hierarchy, density,
+    grid, spacing, sidebar/header, tag filter, post/lab cards, icon SVG, shadow/elevation,
+    hover/motion, light/dark mode, responsive; hoặc khi cần tạo design spec, prompt
+    cho Codex, hay code UI cho AWS Learning Journal và các website kỹ thuật có cùng
+    visual language.
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true
