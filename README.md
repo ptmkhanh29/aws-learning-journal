@@ -29,4 +29,5 @@ Open `http://localhost:3000/en` or `http://localhost:3000/vi`.
 
 Both `/en` and `/vi` contain matching routes for Journal, Notes, AWS, Labs, Practice, About, Login, and Signup. The sample article is at `/en/notes/s3-storage-classes`; the interactive question is at `/en/practice/demo`.
 
-See [docs/DESIGN.md](docs/DESIGN.md) for the visual direction.
+See [docs/DESIGN.md](docs/DESIGN.md) for the visual direction and
+[docs/DATA_MODEL.md](docs/DATA_MODEL.md) for the logical data/domain model.
