@@ -59,6 +59,7 @@ Các prefix chuẩn:
 | Like | `POST#<postId>` | `LIKE#USER#<userId>` |
 | Bookmark lookup | `USER#<userId>` | `BOOKMARK_LOOKUP#POST#<postId>` |
 | Bookmark chronology | `USER#<userId>` | `BOOKMARK#<createdAt>#POST#<postId>` |
+| Upload idempotency | `USER#<adminUserId>` | `IDEMPOTENCY#UPLOAD#<idempotencyKey>` |
 | Slug uniqueness | `UNIQUE#<ENTITY>_SLUG#<slug>` | `LOCK` |
 | Topic catalog | `CATALOG#TOPICS` | `ORDER#<000000>#TOPIC#<topicId>` |
 
@@ -69,6 +70,7 @@ USER#u1
 ├── META
 ├── BOOKMARK_LOOKUP#POST#p1
 ├── BOOKMARK#2026-09-09T01:00:00.000Z#POST#p1
+├── IDEMPOTENCY#UPLOAD#<idempotencyKey>          (24-hour upload retry state)
 ├── PRACTICE_ATTEMPT#...                         (provisional edge)
 └── PRACTICE_PROGRESS#domain-01                 (provisional)
 
@@ -112,7 +114,7 @@ QUESTION#q1                                      (all provisional)
 └── OPTION_ID#o1                                 (uniqueness lock)
 ```
 
-Lookup/idempotency partitions nằm cùng table nhưng ngoài các entity collection trên: `UNIQUE#...`, `COGNITO#...`, `VIEW_DEDUP#...`, `ATTEMPT#...`.
+Lookup/idempotency items nằm cùng table: `UNIQUE#...`, `COGNITO#...`, `VIEW_DEDUP#...`, `ATTEMPT#...`, cùng upload retry state dưới `USER#<adminUserId>`.
 
 ## GSI Design
 
@@ -146,19 +148,19 @@ Không dùng GSI cho slug, Cognito, Topic, Series, Comment hoặc Bookmark. Dire
 | Logical entity / physical item | PK / SK | Required | Optional | GSI | Authority |
 | --- | --- | --- | --- | --- | --- |
 | User | `USER#<id>` / `META` | `userId`, `cognitoSub`, normalized `email`, `displayName`, `role`, `status`, `createdAt`, `updatedAt` | `avatarObjectKey` | none | Source of truth cho application profile/status; Cognito vẫn sở hữu authentication/group |
-| Post | `POST#<id>` / `META` | `postId`, `postType`, `authorId`, `canonicalSlug`, `status`, `visibility`, `createdAt`, `updatedAt` | `coverImageKey`, `publishedAt` | GSI2 keys | Source of truth |
-| PostTranslation | `POST#<id>` / `TRANSLATION#<locale>` | `postId`, `locale`, `status`, `title`, `excerpt`, `bodyS3ObjectKey`, `bodyContentType`, `createdAt`, `updatedAt` | `readingMinutes`, `bodyVersionId`, `bodyETag`, `bodyBytes`, duplicated `canonicalSlug`, `postType`, `publishedAt`, `coverImageKey`; GSI1 keys only if public | GSI1 sparse | Translation fields/source pointer are truth; duplicated Post fields and index projection are materialized |
-| Topic | `TOPIC#<id>` / `META` | `topicId`, `slug`, `name.vi`, `name.en`, `sortOrder`, `createdAt`, `updatedAt` | `description.vi`, `description.en`, `iconObjectKey` | none | Source of truth |
+| Post | `POST#<id>` / `META` | `postId`, `postType`, `authorId`, `canonicalSlug`, `status`, `visibility`, `version`, `createdAt`, `updatedAt` | `coverImageKey`, `publishedAt` | GSI2 keys | Mutable source; `version=1` on create |
+| PostTranslation | `POST#<id>` / `TRANSLATION#<locale>` | `postId`, `locale`, `status`, `title`, `excerpt`, `bodyS3ObjectKey`, `bodyContentType`, `version`, `createdAt`, `updatedAt` | `readingMinutes`, `bodyVersionId`, `bodyETag`, `bodyBytes`, duplicated `canonicalSlug`, `postType`, `publishedAt`, `coverImageKey`; GSI1 keys only if public | GSI1 sparse | Mutable translation/source pointer; `version=1` on create; duplicated Post fields and index projection are materialized |
+| Topic | `TOPIC#<id>` / `META` | `topicId`, `slug`, `name.vi`, `name.en`, `sortOrder`, `version`, `createdAt`, `updatedAt` | `description.vi`, `description.en`, `iconObjectKey` | none | Mutable source; `version=1` on create |
 | Topic catalog edge | `CATALOG#TOPICS` / `ORDER#<sortOrder6>#TOPIC#<topicId>` | `topicId`, `slug`, `name.vi`, `name.en`, `sortOrder` | `iconObjectKey` | none | Small materialized projection for AP21; no published-post counter in V1 |
 | PostTopic | `POST#<postId>` / `TOPIC#<topicId>` | `postId`, `topicId`, `createdAt` | none | none | Source relationship; conditional put enforces pair uniqueness |
 | Topic public edge | `TOPIC#<topicId>#LOCALE#<locale>` / `PUBLISHED#<publishedAt>#POST#<postId>` | post summary fields and `projectionVersion` | `coverImageKey`, `readingMinutes` | none | Materialized; never includes body |
-| Series | `SERIES#<id>` / `META` | `seriesId`, `canonicalSlug`, `authorId`, `status`, `createdAt`, `updatedAt` | `coverImageKey` | none | Source of truth |
-| SeriesTranslation | `SERIES#<id>` / `TRANSLATION#<locale>` | `seriesId`, `locale`, `status`, `title`, `description`, `createdAt`, `updatedAt` | none | none | Source of truth |
+| Series | `SERIES#<id>` / `META` | `seriesId`, `canonicalSlug`, `authorId`, `status`, `version`, `createdAt`, `updatedAt` | `coverImageKey` | none | Mutable source; `version=1` on create |
+| SeriesTranslation | `SERIES#<id>` / `TRANSLATION#<locale>` | `seriesId`, `locale`, `status`, `title`, `description`, `version`, `createdAt`, `updatedAt` | none | none | Mutable source; `version=1` on create |
 | SeriesPost ordered | `SERIES#<seriesId>` / `POSITION#<position6>#POST#<postId>` | `seriesId`, `postId`, `position`, `createdAt` | none | none | Source membership/order |
 | SeriesPost reverse | `POST#<postId>` / `SERIES#<seriesId>` | `seriesId`, `postId`, `position`, `createdAt` | none | none | Materialized reverse edge and uniqueness guard for `(seriesId, postId)` |
 | Series public member | `SERIES#<seriesId>#LOCALE#<locale>` / `POSITION#<position6>#POST#<postId>` | eligible Post summary, `position`, `projectionVersion` | `coverImageKey`, `readingMinutes` | none | Materialized exact-locale public view |
 | Series public reverse | `POST#<postId>#LOCALE#<locale>` / `SERIES_POSITION#<position6>#SERIES#<seriesId>` | eligible Series summary, `position`, `projectionVersion` | `coverImageKey` | none | Materialized AP05 view |
-| LabMetadata | `POST#<postId>` / `LAB_METADATA` | `postId`, `difficulty`, `labStatus`, `services`, `updatedAt` | none | none | Source; only valid for LAB Post |
+| LabMetadata | `POST#<postId>` / `LAB_METADATA` | `postId`, `difficulty`, `labStatus`, `services`, `version`, `updatedAt` | none | none | Mutable source; only valid for LAB Post; `version=1` on create |
 | Comment | `POST#<postId>` / `COMMENT_SOURCE#<commentId>` | `commentId`, `postId`, `userId`, `status`, `createdAt`, `updatedAt`, `version` | `parentId`, `content` (absent only on DELETED tombstone) | none | Source of truth/moderation state; queryable by Post for reconciliation |
 | Comment public edge | `POST#<postId>` / root or reply key shown above | `commentId`, `userId`, `createdAt`, `updatedAt`, `renderState` | `parentId`, `content` only when VISIBLE | none | Materialized public row; HIDDEN/PENDING absent, DELETED may be sanitized tombstone; author profile is BatchGet, not copied |
 | PostLike | `POST#<postId>` / `LIKE#USER#<userId>` | `postId`, `userId`, `createdAt` | none | none | Source relationship and uniqueness record |
@@ -168,11 +170,14 @@ Không dùng GSI cho slug, Cognito, Topic, Series, Comment hoặc Bookmark. Dire
 | PostStats | `POST#<postId>` / `STATS` | `postId`, four non-negative counters, `updatedAt` | none | none | Denormalized aggregate, reconstructable |
 | PostViewsDaily | `POST#<postId>` / `VIEW_DAILY#<YYYY-MM-DD>` | `postId`, `date`, `viewCount`, `updatedAt` | none | none | Durable daily aggregate; source for view reconciliation |
 | View dedup | `VIEW_DEDUP#POST#<postId>` / `VIEWER#<digest>` | `postId`, `viewerDigest`, `windowStartedAt`, `expiresAt` | none | none | Ephemeral idempotency guard, not analytics history |
+| Upload idempotency | `USER#<adminUserId>` / `IDEMPOTENCY#UPLOAD#<idempotencyKey>` | `userId`, `idempotencyKey`, `requestHash`, `objectKey`, `uploadKind`, `contentType`, `size`, `checksumSha256`, `createdAt`, `expiresAt` | none | none | Ephemeral 24-hour retry state; not an upload session or media catalog |
 | PracticeQuestion | `QUESTION#<id>` / `META` | `questionId`, `domainCode`, `status`, `correctOptionId`, `createdAt`, `updatedAt` | `difficulty` | none | Provisional source |
 | PracticeQuestionTranslation | `QUESTION#<id>` / `TRANSLATION#<locale>` | `questionId`, `locale`, `scenario`, `explanation`, `updatedAt` | none | none | Provisional source |
 | PracticeOption | `QUESTION#<id>` / `OPTION#<position6>#OPTION#<id>` | `optionId`, `questionId`, `position`, `text.vi`, `text.en` | none | none | Provisional source; paired with `OPTION_ID#<id>` lock to enforce both unique constraints |
 | PracticeAttempt | `ATTEMPT#<id>` / `META` | attempt logical fields | `durationMs` | none | Provisional immutable/idempotent source; optional user chronology edge under `USER#id` |
 | UserPracticeProgress | `USER#<id>` / `PRACTICE_PROGRESS#<domainCode>` | logical counters/score and `updatedAt` | none | none | Provisional denormalized aggregate |
+
+Post META, PostTranslation, Topic META, Series META, SeriesTranslation và LabMetadata dùng `version` positive integer làm persistence/concurrency metadata; Comment giữ contract version hiện tại. Create đặt `version=1` với not-exists condition. Mọi mutable update có effect phải condition `version == expectedVersion`, cập nhật dữ liệu và atomic `version = version + 1` trong cùng Update/transaction action. Exact idempotent no-op trả current representation và không tăng `version`.
 
 Lookup items are also first-class records:
 
@@ -197,6 +202,7 @@ Lookup items are also first-class records:
   "authorId": "u_123",
   "status": "PUBLISHED",
   "visibility": "PUBLIC",
+  "version": 4,
   "coverImageKey": "media/posts/p_123/cover.webp",
   "publishedAt": "2026-09-09T01:00:00.000Z",
   "createdAt": "2026-09-08T10:00:00.000Z",
@@ -219,6 +225,7 @@ Lookup items are also first-class records:
   "bodyS3ObjectKey": "content/posts/p_123/vi/body.md",
   "bodyContentType": "text/markdown; charset=utf-8",
   "bodyVersionId": "example-version-id",
+  "version": 3,
   "readingMinutes": 5,
   "canonicalSlug": "dynamodb-consistency",
   "postType": "NOTE",
@@ -227,6 +234,20 @@ Lookup items are also first-class records:
   "GSI1SK": "2026-09-09T01:00:00.000Z#POST#p_123",
   "createdAt": "2026-09-08T10:05:00.000Z",
   "updatedAt": "2026-09-09T01:00:00.000Z"
+}
+```
+
+```json
+{
+  "PK": "POST#p_lab_123",
+  "SK": "LAB_METADATA",
+  "entityType": "LAB_METADATA",
+  "postId": "p_lab_123",
+  "difficulty": "INTERMEDIATE",
+  "labStatus": "COMPLETE",
+  "services": ["ALB", "EC2", "VPC"],
+  "version": 2,
+  "updatedAt": "2026-09-09T02:10:00.000Z"
 }
 ```
 
@@ -272,7 +293,7 @@ Lookup items are also first-class records:
     "vi": "DynamoDB",
     "en": "DynamoDB"
   },
-  "iconObjectKey": "media/topics/dynamodb.svg",
+  "iconObjectKey": "media/topics/t_dynamodb/icon/u_icon_123.webp",
   "sortOrder": 10
 }
 ```
@@ -317,6 +338,24 @@ Lookup items are also first-class records:
 }
 ```
 
+```json
+{
+  "PK": "USER#u_123",
+  "SK": "IDEMPOTENCY#UPLOAD#upload-01J123",
+  "entityType": "UPLOAD_IDEMPOTENCY",
+  "userId": "u_123",
+  "idempotencyKey": "upload-01J123",
+  "requestHash": "sha256:7ac4...",
+  "objectKey": "media/posts/p_123/inline/u_123.png",
+  "uploadKind": "POST_IMAGE",
+  "contentType": "image/png",
+  "size": 481920,
+  "checksumSha256": "base64-encoded-checksum",
+  "createdAt": "2026-09-09T03:20:00.000Z",
+  "expiresAt": 1789010400
+}
+```
+
 ## Public Projection Lifecycle
 
 Public eligibility luôn là conjunction: Post `PUBLISHED`, Post `PUBLIC`, exact translation `READY`. Khi eligibility hoặc summary đổi, cùng admin use case phải đồng bộ:
@@ -326,11 +365,15 @@ Public eligibility luôn là conjunction: Post `PUBLISHED`, Post `PUBLIC`, exact
 3. Put/delete Topic public edges cho từng PostTopic và locale liên quan.
 4. Put/delete Series public member/reverse edges khi cả Series locale và Post locale đều eligible.
 
+Trước khi publish/republish một Post `postType=LAB`, admin flow còn phải require `POST#<postId>/LAB_METADATA` tồn tại và hợp lệ. Đây là integrity precondition để public detail luôn trả `LabMetadataDTO`, không phải field duplicate trong public projections và không thay đổi exact-locale eligibility rule.
+
 VI READY nhưng EN DRAFT chỉ tạo `PUBLISHED#vi` và VI materialized edges. Unpublish, archive, đổi visibility sang PRIVATE hoặc READY về DRAFT phải remove GSI1 keys và xóa public edges; source relationships vẫn giữ.
 
 V1 thực hiện projection maintenance đồng bộ trong `TransactWriteItems` của admin publish/readiness/membership operation vì fan-out hiện nhỏ. Repository phải tính desired projection idempotently từ source state. Nếu một Post có fan-out vượt transaction service limit trong tương lai, không split mù quáng làm lộ partial state; khi đó cần projection workflow có trạng thái/rebuild riêng. V1 không thêm workflow đó.
 
 Topic edge duplicate title, excerpt, slug, type, publish time, cover key và reading time để AP03 không N+1. Nó không duplicate body. Series public edges duplicate summary tương tự để AP04/AP05 vừa đúng locale/public state vừa paginate ổn định, thay vì query membership rồi FilterExpression. Summary edit gây write amplification theo số Topic/Series, được chấp nhận vì admin writes hiếm.
+
+LabMetadata không được duplicate vào GSI1, Topic hoặc Series summary edges vì UI V1 chỉ cần nó ở Post detail. Admin LabMetadata update vì vậy không fan out public projections; public AP01 đọc trực tiếp item trong Post collection khi `postType=LAB`.
 
 Topic catalog edge là projection riêng cho navigation/admin picker, không phụ thuộc Post publication. Create/update/reorder Topic phải đồng bộ Topic META và catalog edge trong cùng transaction; nếu `sortOrder` đổi thì xóa old-key edge và put new-key edge. Published-post count chưa có requirement đủ chắc chắn nên không nằm trong edge hoặc tạo counter ở V1; nếu UI cần sau này, nó là derived/future decision cần access-pattern review riêng.
 
@@ -340,7 +383,7 @@ Topic catalog edge là projection riêng cho navigation/admin picker, không ph�
 
 | AP | Operation | Index/Table | PK | SK condition / steps | Projection | Consistency | Pagination |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| AP01 | Published Post by slug + locale | Base | `UNIQUE#POST_SLUG#slug`, then `POST#id` | `GetItem LOCK`; `BatchGet` META, `TRANSLATION#locale`, STATS; `Query begins_with(SK,"TOPIC#")`, optional BatchGet Topic META | Full detail refs, stats, topic IDs | EC acceptable; application rechecks public rule | none; typically 1 Get + 1 BatchGet + 1 Query (+ Topic BatchGet) plus 1 S3 Get for body |
+| AP01 | Published Post by slug + locale | Base | `UNIQUE#POST_SLUG#slug`, then `POST#id` | `GetItem LOCK`; `BatchGet` META, `TRANSLATION#locale`, STATS and `LAB_METADATA` when `postType=LAB`; `Query begins_with(SK,"TOPIC#")`, optional BatchGet Topic META | Full detail refs, optional LabMetadata, stats, topic IDs | EC acceptable; application rechecks public rule and requires LabMetadata only for LAB | none; typically 1 Get + 1 BatchGet + 1 Query (+ Topic BatchGet) plus 1 S3 Get for body |
 | AP02 | Latest published posts | GSI1 | `PUBLISHED#locale` | `Query`, no filter, `ScanIndexForward=false` | GSI1 summary projection | EC | LEK cursor |
 | AP03 | Posts by topic | Base | resolve `UNIQUE#TOPIC_SLUG#slug` if needed, then `TOPIC#id#LOCALE#locale` | `begins_with(SK,"PUBLISHED#")`, `ScanIndexForward=false` | Summary edge | EC | LEK cursor |
 | AP04 | Posts in series | Base | resolve slug; `SERIES#id` for META/translation, then `SERIES#id#LOCALE#locale` | `Get/BatchGet` META + translation; `Query begins_with(SK,"POSITION#")`, forward | Eligible summary edge | EC | LEK cursor; no post-query eligibility filter |
@@ -361,6 +404,8 @@ Topic catalog edge là projection riêng cho navigation/admin picker, không ph�
 | AP19 | Translation by entity ID + locale | Base | `POST#id`, `SERIES#id` or `QUESTION#id` | `GetItem TRANSLATION#locale`; public Post/Series also read META and validate public rule | exact translation, body pointer for Post | EC public; SC optional admin edit precondition | none |
 | AP20 | Homepage recent posts | GSI1 + Base | `PUBLISHED#locale` | Query reverse with small limit; one BatchGet `POST#id/STATS` | summaries + stats | EC | LEK cursor |
 | AP21 | List Topics by sortOrder | Base | `CATALOG#TOPICS` | `Query begins_with(SK,"ORDER#")`, forward; no Scan | `topicId`, slug, localized name, icon key, sortOrder | EC; source Topic META remains mutation truth | LEK cursor, `ScanIndexForward=true` |
+
+Admin LabMetadata create/update là supporting direct-key operation, không phải global discovery AP mới: SC-read `POST#id/META` và `POST#id/LAB_METADATA`, rồi transaction condition-check Post remains LAB + conditional Put/Update LabMetadata. Nó không dùng Scan, GSI hoặc public projection.
 
 AP10 không duplicate public content vào bookmark vì snapshot có thể stale và vô tình expose content đã PRIVATE/ARCHIVED. Repository query bookmark edges theo batches, BatchGet current META/translation, bỏ item không còn public exact-locale và tiếp tục đến khi đủ client limit, hết dữ liệu, hoặc chạm server work cap. Cursor phải trỏ tới bookmark edge cuối cùng đã **consume**, nên page có thể ngắn/empty nhưng không lặp hoặc bỏ qua edge. Đây là V1 trade-off cho personal collection nhỏ; nếu bookmark volume lớn mới cần dedicated user-visible projection.
 
@@ -403,6 +448,35 @@ Flow là một `TransactWriteItems` ba action:
 
 Nếu dedup condition fail, toàn transaction rollback và request là no-op. Application kiểm tra timestamp trong condition thay vì chờ TTL xóa item, vì TTL deletion asynchronous. Popular post có thể làm partition dedup/stats nóng; V1 chưa shard.
 
+### Upload idempotency
+
+`POST /api/v1/admin/uploads` giữ retry state 24 giờ tại `USER#<adminUserId> / IDEMPOTENCY#UPLOAD#<idempotencyKey>`; không cần GSI vì caller và key đều đã biết. Backend normalize payload gồm upload kind, target resource ID, filename, content type, size và checksum, rồi hash canonical representation thành `requestHash`.
+
+```text
+POST /admin/uploads
+        ↓
+validate + normalize payload
+        ↓
+hash normalized payload
+        ↓
+derive candidate trusted objectKey
+        ↓
+conditional create/read UPLOAD_IDEMPOTENCY
+        ↓
+use stored logical objectKey
+        ↓
+generate short-lived presigned S3 PUT URL
+        ↓
+Browser uploads directly to S3
+```
+
+- Record chưa tồn tại: server derives candidate `objectKey` from trusted identity/kind/request hash, then conditional Put stores it with `attribute_not_exists(PK) AND attribute_not_exists(SK)` and `expiresAt = now + 24h`, rồi presign URL.
+- Cùng key và cùng `requestHash` trước expiry: trả cùng logical `objectKey`; backend có thể presign URL mới cho target đó.
+- Cùng key nhưng khác `requestHash` trước expiry: trả domain conflict `IDEMPOTENCY_KEY_REUSED`.
+- Khi `expiresAt <= now`, application có thể conditionally replace record dựa trên exact stored `expiresAt`/`requestHash`; replacement tạo lifetime mới và derive object key từ trusted identity + normalized request hash để request khác không vô tình overwrite object cũ.
+
+Correctness luôn dựa trên condition và stored timestamp, không chờ TTL physical deletion. Record này chỉ là retry state, không phải upload session/media catalog và không chứng minh browser đã upload object.
+
 ## Counter Strategy
 
 V1 chọn **synchronous transactions**, không DynamoDB Streams:
@@ -441,12 +515,14 @@ Các operation dùng `TransactWriteItems`:
 - Bootstrap User: Cognito sentinel + normalized-email sentinel + User META, tất cả conditional not-exists.
 - Đổi User email: Put sentinel mới + Update User META + Delete sentinel cũ với expected-owner conditions.
 - Create Post: slug sentinel + Post META + zeroed PostStats.
+- Create/update PostTranslation hoặc SeriesTranslation khi write cũng đổi public eligibility/summary: source item absent cho create ở `version=1`, hoặc `version == expectedVersion` cho update, cùng relevant bounded projections. Draft-only write không cần transaction nếu không có cross-item invariant.
+- Create/update LabMetadata: condition-check `POST#id/META` exists with immutable `postType=LAB`, then conditional Put/Update `POST#id/LAB_METADATA`; no public projection action because LabMetadata remains detail-only.
 - Create Topic: slug sentinel + Topic META + Topic catalog edge.
 - Update Topic metadata: Update Topic META + Update cùng catalog edge; nếu reorder thì mỗi Topic bị ảnh hưởng dùng một Update META + Delete old catalog edge + Put new catalog edge, với expected-version/owner conditions.
 - Create Series: slug sentinel + entity META.
 - Create/delete PostTopic: source edge và relevant bounded public Topic projections.
 - Add/move/remove SeriesPost: ordered forward edge + reverse edge + relevant locale public edges; conditions giữ unique post và position.
-- Publish/unpublish/archive/change visibility/change translation readiness: source updates + sparse index attributes + relevant public projections.
+- Publish/unpublish/archive/change visibility/change translation readiness: source updates + sparse index attributes + relevant public projections; publish/republish LAB condition-checks LabMetadata exists.
 - Like/unlike: edge + PostStats.
 - Bookmark/unbookmark: lookup + chronological edge.
 - Accept share: unique event + PostStats.
@@ -462,7 +538,9 @@ Nếu source update và add/remove GSI attributes cùng nằm trên một `POST_
 
 Nếu fan-out vượt guard, V1 trả domain/operational error và yêu cầu giảm scope hoặc thiết kế lại workflow; không commit một phần. Projection workflow nhiều phase, async rebuild hoặc Streams chỉ được cân nhắc ở version sau khi có evidence.
 
-Không transaction cho independent profile edit, draft body-pointer update, ordinary Get/Query, hay stats display. Transaction chỉ dùng khi failure một nửa sẽ phá invariant, uniqueness, idempotency hoặc counter correctness.
+Mọi update action mutate Post META, PostTranslation, Topic META, Series META, SeriesTranslation hoặc LabMetadata mang condition `version == expectedVersion` và increment version trong chính action đó. Create action dùng not-exists condition và bắt đầu ở `version=1`; PostTranslation, SeriesTranslation và LabMetadata PUT biểu diễn create-if-absent bằng `expectedVersion=null`. Exact idempotent no-op được xác định từ current normalized state trước commit và không tạo write/version increment.
+
+Không transaction cho independent profile edit, draft body-pointer update, ordinary Get/Query, stats display hoặc conditional upload-idempotency Put/replace một item. Transaction chỉ dùng khi failure một nửa sẽ phá invariant, uniqueness, idempotency hoặc counter correctness.
 
 S3 upload và DynamoDB không có cross-service transaction. Backend upload immutable/new S3 version trước, sau đó conditional-update body pointer trong DynamoDB. Nếu pointer update fail, object/version chưa tham chiếu là orphan có thể cleanup sau; không overwrite object đang được published pointer trỏ tới.
 
@@ -471,7 +549,7 @@ S3 upload và DynamoDB không có cross-service transaction. Backend upload immu
 | Concern | Pseudo-condition |
 | --- | --- |
 | Slug/Cognito/email uniqueness | sentinel `attribute_not_exists(PK)` trong cùng create transaction |
-| PostTranslation uniqueness | `attribute_not_exists(PK) AND attribute_not_exists(SK)` |
+| PostTranslation/SeriesTranslation create | `attribute_not_exists(PK) AND attribute_not_exists(SK)`; initialize `version=1` |
 | PostTopic uniqueness | source edge not exists |
 | Series `(seriesId, position)` | ordered forward key not exists |
 | Series `(seriesId, postId)` | reverse key not exists; transaction cùng forward edge |
@@ -479,16 +557,26 @@ S3 upload và DynamoDB không có cross-service transaction. Backend upload immu
 | Bookmark create/delete | lookup and list absent for Put; expected `createdAt` for Delete |
 | Share retry | event item absent |
 | View dedup | absent or stored `expiresAt <= now` |
-| Optimistic edit/moderation | `version == expectedVersion` and current state == expected state |
+| Upload retry | absent for first Put; same stored `requestHash` for retry; expired replacement conditions exact previous `expiresAt`/`requestHash` |
+| Optimistic edit/moderation | mutable source `version == expectedVersion` and current state == expected state; successful effect increments version once |
+| LabMetadata create/update | Post META exists with `postType=LAB`; metadata absent for create or `version == expectedVersion` for update |
+| Publish/republish LAB | `POST#id/LAB_METADATA` exists and contains valid required fields |
 | Counter decrement | relevant counter `> 0` |
 | First publish time | set `publishedAt` only if absent; republish retains value |
 | Projection update | source expected status/version and deterministic `projectionVersion` |
 
-Logical conditional failures are domain outcomes (`already liked`, `slug conflict`, stale edit), không được blind retry. Với ambiguous network result, retry cùng request identity/expected condition để condition phân biệt commit đã xảy ra.
+Version mismatch là domain conflict và API map thành `409 STALE_VERSION`. Exact idempotent no-op không increment version. Các logical conditional failure khác (`already liked`, `slug conflict`, reused upload key) cũng không được blind retry. Với ambiguous network result, retry cùng request identity/expected condition để condition phân biệt commit đã xảy ra.
 
 ## TTL
 
-Chỉ `VIEW_DEDUP` dùng `expiresAt` trong V1. Không TTL Post, User, Comment, Like, Bookmark, Share, Stats, daily views, Series hoặc Practice records. Share idempotency permanent vì event là reconciliation source.
+TTL V1 chỉ dùng cho ephemeral records:
+
+| Item | Lifetime | Correctness rule |
+| --- | --- | --- |
+| `VIEW_DEDUP` | 1 giờ | Accept/reject view bằng stored `expiresAt`, không bằng physical deletion |
+| `UPLOAD_IDEMPOTENCY` | 24 giờ | Retry/reuse bằng `requestHash` và conditional stored `expiresAt`, không bằng physical deletion |
+
+Không TTL Post, PostTranslation, LabMetadata, User, Comment, Like, Bookmark, Share, Stats, PostViewsDaily, Series, SeriesTranslation, Topic hoặc Practice records. Share idempotency permanent vì event là reconciliation source.
 
 DynamoDB TTL xóa asynchronous và có thể trễ. Application luôn kiểm tra `expiresAt` trong conditional write/read; không giả định item biến mất đúng giây hết hạn. Nếu sau này có temporary operation locks, chúng có thể dùng cùng attribute nhưng correctness vẫn phải dựa trên timestamp condition, không dựa vào deletion.
 
@@ -510,6 +598,7 @@ AP10 fill-loop cursor rule được mô tả ở access mapping. AP04/AP05 khôn
 | Operation | Consistency |
 | --- | --- |
 | Public Post/Series detail and translations | EC, nhưng luôn validate cùng public-locale rule |
+| Public LabMetadata detail | EC direct primary-key read after Post public/type validation |
 | Published/topic/series/home listing | EC; GSI1 và public projections có publish propagation delay ngắn |
 | Topic catalog | EC materialized projection; admin mutation conditions use Topic META |
 | PostStats display | EC |
@@ -517,6 +606,7 @@ AP10 fill-loop cursor rule được mô tả ở access mapping. AP04/AP05 khôn
 | Bookmark list edges/current visibility | SC preferred cho read-your-write; BatchGet primary records can request SC |
 | Cognito sub mapping and User ACTIVE check | SC primary-key reads |
 | Admin mutation precondition/current version | SC primary-key read plus conditional write |
+| Upload idempotency retry/reuse | SC primary-key read plus conditional Put/replace |
 | Admin status listing | EC GSI2; never sole authorization/mutation truth |
 | Accepted counter transition | Transactional atomic write; subsequent EC read may lag |
 | Slug lookup | EC đủ cho public immutable slug; create conflict do conditional transaction, không do read |
@@ -537,12 +627,16 @@ Database-side field strategy:
 | Asset | Durable field/example |
 | --- | --- |
 | Post body | `bodyS3ObjectKey = content/posts/<postId>/<locale>/body.md`, optional `bodyVersionId`, `bodyETag`, `bodyBytes` |
-| Cover | `coverImageKey = media/posts/<postId>/cover.webp` |
+| Post cover | `coverImageKey = media/posts/<postId>/cover/<assetId>.<ext>` |
 | Inline image | Markdown references stable logical key under `media/posts/<postId>/inline/<assetId>.<ext>` |
+| Topic icon | `iconObjectKey = media/topics/<topicId>/icon/<assetId>.<ext>` |
+| Series cover | `coverImageKey = media/series/<seriesId>/cover/<assetId>.<ext>` |
 | Avatar | `avatarObjectKey = media/users/<userId>/avatar.webp` |
 | Attachment | Separate lightweight `MEDIA#<assetId>` item under Post only when filename/contentType/size/access metadata must be queried; object key `media/posts/<postId>/attachments/<assetId>/<filename>` |
 
 S3 read thêm một object request cho detail page; CloudFront có thể cache body/media sau này. Write flow có upload + Dynamo pointer update và orphan cleanup như transaction section. Storage, request, retrieval và delivery đều có chi phí, nên V1 dùng general-purpose bucket/default frequently-accessed class; không thêm lifecycle archive khi chưa có access/retention evidence.
+
+Presigned upload không cho frontend chọn arbitrary S3 key. Backend derive `objectKey` từ verified admin identity, trusted target resource, upload kind và idempotency/request identity; binary đi thẳng Browser → S3, không qua Lambda. Khi Post/Topic/Series mutation attach key, backend phải kiểm tra expected resource-owned prefix, expected upload kind, object existence và content metadata/checksum phù hợp trước khi persist reference. `UPLOAD_IDEMPOTENCY` không cần GSI và không thay thế kiểm tra S3 object khi attach.
 
 Deployment phải dùng encryption at rest, TLS in transit, Block Public Access, least-privilege IAM và private S3 origin qua CloudFront/OAC nếu có CDN. Production nên audit bằng CloudTrail data events theo phạm vi/cost phù hợp, access logs/CloudWatch metrics và encrypted log destinations. Không lưu bucket URL hoặc temporary signed URL trong DynamoDB.
 
@@ -575,6 +669,8 @@ AWS Free Tier/pricing có thể thay đổi theo thời điểm/account nên ph�
 | Bookmark/unbookmark | 1 direct lookup + 1 chronological edge |
 | Share | 1 permanent idempotent event + 1 stats update |
 | View | 1 TTL dedup + 1 total stats + 1 daily aggregate |
+| Upload presign/retry | 1 ephemeral upload-idempotency item per active key; repeated same request reuses it |
+| LabMetadata create/update | 1 condition check on Post META + 1 conditional metadata Put/Update; no list projection write |
 | Comment visibility transition | 1 source update + public edge put/delete + stats when count changes |
 | Topic create/update/reorder | Topic META + catalog edge; reorder uses delete old edge + put new edge per changed Topic |
 | Topic publication | 1 materialized summary per eligible topic/locale |
@@ -623,19 +719,22 @@ Logs không chứa raw IP, JWT, signed URL hoặc full post/comment body. Metric
 
 1. Base table contract với provisioned capacity/billing guardrails, key builders, item discriminator và opaque cursor codec.
 2. User bootstrap: Cognito/email sentinels và SC ACTIVE lookup.
-3. Post META, PostTranslation body pointer, PostStats và exact-locale detail read.
-4. Slug uniqueness cho Post/Topic/Series.
-5. Topic catalog edge, AP21 Query và transactional create/update/reorder guard.
-6. `GSI1_PUBLISHED`, publish/unpublish projection và AP02/AP20.
-7. PostTopic source + Topic public locale edges.
-8. Series source membership, uniqueness và two-way public locale edges; không implement deferred AP22 catalog.
-9. Like transaction và reconciliation query.
-10. Bookmark dual items và filtered pagination loop.
-11. Comment source/public projection, moderation transitions và counter.
-12. Share event và view dedup/daily counters.
-13. `GSI2_POST_STATUS` và admin listing/read-before-write.
-14. CloudWatch capacity/throttling metrics, backup/recovery tests và throttling/idempotency fault tests.
-15. Revisit and finalize Practice, rồi mới implement provisional items.
+3. Post META và PostTranslation body pointer với `version`/conditional-write contract, rồi PostStats.
+4. LabMetadata source với `version`, LAB-type condition và detail-only policy.
+5. Slug uniqueness cho Post/Topic/Series và exact-locale public Post detail, gồm optional LabMetadata direct read.
+6. Topic catalog edge, AP21 Query và transactional create/update/reorder guard.
+7. `GSI1_PUBLISHED`, publish/unpublish projection và AP02/AP20.
+8. Admin LabMetadata create/update endpoint repository path; không tạo list projection.
+9. PostTopic source + Topic public locale edges.
+10. Series source membership, uniqueness và two-way public locale edges; không implement deferred AP22 catalog.
+11. Like transaction và reconciliation query.
+12. Bookmark dual items và filtered pagination loop.
+13. Comment source/public projection, moderation transitions và counter.
+14. Share event và view dedup/daily counters.
+15. `GSI2_POST_STATUS` và admin listing/read-before-write.
+16. `UPLOAD_IDEMPOTENCY` conditional/TTL behavior cùng presigned S3 upload và attach-time ownership checks.
+17. CloudWatch capacity/throttling metrics, backup/recovery tests và throttling/idempotency fault tests.
+18. Revisit and finalize Practice, rồi mới implement provisional items.
 
 ## Final V1 Decisions
 
@@ -653,7 +752,10 @@ Logs không chứa raw IP, JWT, signed URL hoặc full post/comment body. Metric
 | Cognito lookup | Direct `COGNITO#sub/USER` sentinel; no GSI |
 | Bookmark | Direct lookup source + chronological materialized item in transaction |
 | Counters | Synchronous transactions; no Streams in V1 |
-| TTL | Only one-hour view dedup items |
+| Mutable source concurrency | `version=1` on conditional create; effectful updates require `expectedVersion` and increment once; exact no-op does not increment |
+| LabMetadata | Versioned direct item under Post; LAB-only and detail-only, no GSI/list projection |
+| Upload idempotency | `USER#admin/IDEMPOTENCY#UPLOAD#key`, 24-hour state, conditional request-hash policy; no GSI |
+| TTL | Ephemeral only: one-hour `VIEW_DEDUP` and 24-hour `UPLOAD_IDEMPOTENCY` |
 | Content body | UTF-8 Markdown in versioned S3; pointer/metadata in DynamoDB |
 | Pagination | Opaque LEK cursor; never offset |
 | Consistency | EC public/index/stats reads; SC identity, user state and mutation checks |
@@ -668,7 +770,7 @@ Các core DynamoDB decisions không còn deferred. Những requirement chưa đ�
 - Practice retake/scoring/review semantics, question versioning và option translation normalization.
 - Search/full-text search và SEO redirect history nếu sau này có localized slug.
 - PostRevision retention, snapshot granularity và rollback audit policy.
-- Exact media upload validation/retention và moderation product workflow beyond V1 states.
+- Exact orphan-media cleanup/retention schedule và moderation product workflow beyond V1 states.
 - Formal production RPO/RTO và audit retention duration.
 - AP22 List Published Series: chỉ thiết kế khi UI/product chốt locale, sort order và pagination requirement.
 
