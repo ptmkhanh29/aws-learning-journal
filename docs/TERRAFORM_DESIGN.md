@@ -88,7 +88,7 @@ Proposed V1 baseline, verified against official Terraform/Registry pages on 2026
 | Component | Constraint | Reason |
 | --- | --- | --- |
 | Terraform CLI | `~> 1.16.0` | Pin the selected minor line while accepting compatible patch/security fixes; includes current S3 lockfile-era behavior |
-| AWS provider | `hashicorp/aws ~> 6.60` | Pin the selected provider minor line instead of silently adopting future schema-breaking minors/major versions |
+| AWS provider | `hashicorp/aws ~> 6.60.0` | Select `>= 6.60.0, < 6.61.0`: compatible patches in the pinned 6.60 minor line only |
 
 Each environment root commits `.terraform.lock.hcl`, which records exact resolved provider checksums. Dev and prod lock files should resolve to the same version; an intentional provider upgrade updates both in one reviewed change. Do not use unbounded `>=` or `latest` constraints.
 
@@ -262,7 +262,7 @@ Names are derived in locals rather than independently typed for each resource.
 | Account-level AWS Budget/notifications | `bootstrap/budget.tf` | Exists before the first application environment |
 | DynamoDB table, two GSIs, TTL, capacity, PITR/protection | `modules/application/dynamodb.tf` | Must match `DYNAMODB_DESIGN.md`; no item/data seeding |
 | Content/media S3 bucket, policy, CORS, versioning | `modules/application/s3.tf` | One bucket per environment; state bucket is separate |
-| Cognito User Pool, app client, domain, groups | `modules/application/cognito.tf` | Google secret boundary described below |
+| Cognito User Pool, Resource Server `aws-learning-journal`/scope `access`, app client scope set, domain and groups | `modules/application/cognito.tf` | App Client allows `openid email profile aws.cognito.signin.user.admin aws-learning-journal/access`; Google secret boundary described below |
 | Four Lambda groups and invoke permissions | `modules/application/lambda.tf` | Prepared artifacts only |
 | Runtime IAM roles/policies | `modules/application/iam.tf` | One role/group; scoped environment resources |
 | API Gateway HTTP API, routes, integrations, JWT authorizer, CORS/stage | `modules/application/api_gateway.tf` | `/api/v1/*`; operations health route is separate from product matrix |
@@ -307,7 +307,7 @@ Terraform rules:
 
 Google federation has a specific limitation: the current `aws_cognito_identity_provider` resource accepts Google's `client_secret` inside ordinary `provider_details`; the reviewed provider documentation does not expose a confirmed write-only argument for that field. V1 therefore chooses a deliberate boundary:
 
-1. Terraform owns the User Pool, public app client, domain, callback URLs, groups and the non-secret expected Google-provider contract.
+1. Terraform owns the User Pool, Resource Server (`aws-learning-journal` + `access`), public App Client and its final OAuth scope set, domain, callback URLs, groups and the non-secret expected Google-provider contract.
 2. A controlled post-apply operation creates/updates the Google identity-provider binding using the secret read from SSM SecureString without printing it or committing it.
 3. The operation uses read-modify-write semantics and a protected temporary input mechanism; it is recorded in deployment evidence.
 4. Drift checks verify the provider exists and its non-secret settings match the contract.
@@ -437,7 +437,7 @@ Abstract only after duplicated code, independent lifecycle or another real consu
 | 1 | DynamoDB table/two GSIs/TTL/capacity plus private S3 content bucket | `terraform apply` succeeds in dev; table settings and bucket security checks match contracts |
 | 2 | Four scoped IAM execution roles, explicit log groups and Lambda skeleton artifacts | Each function invokes and writes safe correlated logs; permissions fail closed outside its scope |
 | 3 | API Gateway HTTP API, integrations, CORS, stage/access logs and `/api/v1/health` | Health request reaches the `public-content` Lambda's operations branch and returns `200` |
-| 4 | Cognito User Pool/client/domain/JWT authorizer plus controlled Google IdP secret binding | PKCE login yields Access Token; protected route accepts valid scope and rejects wrong token/group |
+| 4 | Cognito User Pool/Resource Server/client/domain/JWT authorizer plus controlled Google IdP secret binding | PKCE requests the final five-scope set; Access Token supports `GetUser`; protected route requires `aws-learning-journal/access` and rejects wrong token/group |
 | 5 | CloudWatch dashboard/basic alarms and AWS Budget notifications | Test fault/threshold path is observable without noisy alert fan-out |
 | 6 | CloudFront/OAC, ACM and Route 53 records after frontend origin/domain decision | HTTPS frontend/media works; `api.<domain>` remains same-site and routes to Regional HTTP API |
 
@@ -466,7 +466,8 @@ GET /api/v1/health
 | Lambda ownership | Exactly four capability groups |
 | DynamoDB | One Standard PROVISIONED table/environment, exactly two named GSIs, existing capacity budget |
 | Authentication | Cognito User Pool + Google, authorization code with PKCE, Access Token |
-| Authorization | JWT authorizer plus Lambda ADMIN group/business rules and SC `User.status=ACTIVE` |
+| OAuth/resource server | Resource Server `aws-learning-journal` + `access`; App Client permits the finalized five scopes including `aws.cognito.signin.user.admin` |
+| Authorization | JWT authorizer requires Access Token `aws-learning-journal/access`; Lambda adds ADMIN group/business rules and SC `User.status=ACTIVE` |
 | S3 boundary | Markdown/media object storage, backend-owned keys, direct presigned binary upload |
 | Environments | Independent roots/state/roles/names for dev and prod |
 | Cost intent | Free Tier conscious with explicit budgets, retention and expensive-service exclusions |
@@ -478,7 +479,7 @@ No Terraform choice in this document changes the business semantics in `DATA_MOD
 | Concern | V1 decision |
 | --- | --- |
 | Layout | Two environment roots + one coarse application module + minimal bootstrap root |
-| Versioning | Terraform `~> 1.16.0`, AWS provider `~> 6.60`, committed lock files; reverify before Phase 0 |
+| Versioning | Terraform `~> 1.16.0`, AWS provider `~> 6.60.0`, committed lock files; reverify before Phase 0 |
 | Backend | Hardened S3 backend with `use_lockfile=true`; no deprecated DynamoDB lock table |
 | Environment isolation | Separate dev/prod state keys, variables, IAM roles and apply gates; no workspaces |
 | Secrets | SSM SecureString, out-of-band secret values; explicit Google IdP binding exception to avoid Terraform-state plaintext |

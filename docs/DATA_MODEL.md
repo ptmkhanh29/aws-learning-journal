@@ -522,7 +522,7 @@ The unique key is (userId, domainCode). Recurring mistakes are derived from atte
 9. SeriesPost is unique by both (seriesId, postId) and (seriesId, position); position is positive.
 10. A Post may appear in multiple Series; Post does not own a single seriesId.
 11. A public Series locale requires `Series.status = PUBLISHED` and `SeriesTranslation(locale).status = READY`; it exposes only member Posts that satisfy the same locale public rule, preserving their relative SeriesPost.position order.
-12. LabMetadata exists only for Post.type=LAB and is unique by postId.
+12. LabMetadata exists only for Post.type=LAB and is unique by postId. A LAB Post must have valid LabMetadata before any locale is publicly exposed.
 13. Root Comment has `parentId = null`. A reply parent must exist, share the reply's postId and itself have `parentId = null`; V1 reply depth is at most one.
 14. PostLike is unique by (postId, userId). Like and unlike transitions are idempotent.
 15. Bookmark is unique by (userId, postId).
@@ -542,7 +542,7 @@ Trong bảng dưới đây, “public Post/locale” luôn là cùng một rule:
 
 | ID | Access pattern | Actor | Known input | Data required | Sort/order | Consistency requirement | Expected frequency |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| AP01 | Get published post by slug and locale | Anonymous/User | canonicalSlug, locale | Post, exact-locale READY PostTranslation, PostStats, topics | none | Eventual public read acceptable; require the locale public rule | High |
+| AP01 | Get published post by slug and locale | Anonymous/User | canonicalSlug, locale | Post, exact-locale READY PostTranslation, PostStats, topics, and LabMetadata only when `Post.type=LAB` | none | Eventual public read acceptable; require the locale public rule and valid LabMetadata before exposing a LAB | High |
 | AP02 | Get latest published posts | Anonymous/User | locale, optional cursor/limit | Exact-locale public Post summaries | publishedAt descending | Eventual after publish acceptable; query the requested locale directly | High |
 | AP03 | Get posts by topic | Anonymous/User | topicId/slug, locale, optional cursor/limit | Exact-locale public Post summaries | publishedAt descending | Eventual acceptable; no fallback or read-large-then-filter path | Medium |
 | AP04 | Get posts in a series | Anonymous/User | seriesId/slug, locale, optional cursor/limit | READY SeriesTranslation and eligible exact-locale Posts | SeriesPost.position ascending | Eventual public read acceptable; apply V1 partial-exposure policy | Medium |
@@ -562,8 +562,11 @@ Trong bảng dưới đây, “public Post/locale” luôn là cùng một rule:
 | AP18 | Verify admin authorization | Backend | verified Access Token claims, mapped userId | `ADMIN` Cognito group membership and current ACTIVE status | none | Security-sensitive; status uses primary-key read, never a stale GSI as sole authority | Medium |
 | AP19 | Get translated content by locale | Anonymous/User/Admin | entity ID, locale | Exact translation | none | No silent locale fallback; public actors also require the public locale rule | High |
 | AP20 | Get recent posts for homepage | Anonymous/User | locale, small limit, optional cursor | Mixed JOURNAL/NOTE/LAB summaries, exact-locale READY translations and stats | publishedAt descending | Eventual acceptable; query the requested locale directly | High |
+| AP21 | List ordered Topics / Topic catalog | Anonymous/User/Admin | locale, optional cursor/limit | Localized Topic summaries required by navigation/topic picker | Topic.sortOrder ascending | Eventual acceptable | Medium/High |
 
-Before physical design, review pagination, expected item sizes, hot-key risk, write amplification, locale publication behavior, comment volume, counter retry semantics and admin traffic.
+AP21 is a logical access pattern. Its physical materialized catalog remains owned by `DYNAMODB_DESIGN.md`: `PK = CATALOG#TOPICS`, `SK = ORDER#<sort6>#TOPIC#<topicId>`. It does not require a new GSI.
+
+Before physical design, review pagination, expected item sizes, hot-key risk, write amplification, locale publication behavior, comment volume, counter retry semantics and admin traffic across AP01-AP21.
 
 ## DynamoDB physical design — deferred
 

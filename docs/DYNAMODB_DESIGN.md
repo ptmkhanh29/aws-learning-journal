@@ -2,7 +2,7 @@
 
 ## Purpose and status
 
-Tài liệu này chốt physical database design V1 từ logical model và AP01-AP20 trong `docs/DATA_MODEL.md`, đồng thời bổ sung AP21 cho Topic catalog cần thiết để render navigation hiện tại. Đây là implementation contract cho repository/data-access layer ở phase kế tiếp; không mô tả resource đã được tạo.
+Tài liệu này chốt physical database design V1 từ logical model AP01-AP21 trong `docs/DATA_MODEL.md`, bao gồm AP21 cho Topic catalog cần thiết để render navigation hiện tại. Đây là implementation contract cho repository/data-access layer ở phase kế tiếp; không mô tả resource đã được tạo.
 
 Các business invariant, lifecycle và authorization rule vẫn do `DATA_MODEL.md` sở hữu. Những item duplicate bên dưới chỉ là read model/materialized edge để phục vụ DynamoDB Query, không thay đổi business semantics.
 

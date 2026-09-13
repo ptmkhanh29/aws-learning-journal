@@ -69,7 +69,7 @@ V1 deploys exactly four capability-oriented Lambda functions or independently de
 | Group | Responsibilities | Main dependencies |
 | --- | --- | --- |
 | `public-content` | Published Post detail/list, ordered Topic catalog, Topic reads, Series detail/membership reads and S3 Markdown delivery | DynamoDB read paths, S3 content reads |
-| `user-profile` | `/me`, Cognito `sub` to application User lookup and idempotent first-use bootstrap | Cognito claims, DynamoDB User/sentinel items |
+| `user-profile` | `/me`, Cognito `sub` to application User lookup and idempotent first-use bootstrap via token-authorized Cognito `GetUser` | Cognito Access Token/attributes, DynamoDB User/sentinel items |
 | `interactions` | Comments, likes, bookmarks, shares, views, counters and idempotency/dedup transactions | DynamoDB interaction/source items |
 | `admin-content` | Post/translation CRUD, publish/archive/republish, LabMetadata, Topic/Series management and upload presign | DynamoDB content transactions, S3 content/media operations |
 
@@ -102,7 +102,10 @@ sequenceDiagram
 
 - Cognito User Pool owns authentication, Google federation, managed login and token issuance.
 - The browser app client is public, has no client secret and uses authorization code with PKCE. `state` and OIDC `nonce` remain required browser controls.
-- Protected `/api/v1/*` routes use the Cognito **Access Token** and the HTTP API JWT authorizer.
+- The User Pool has a Resource Server with identifier `aws-learning-journal` and scope `access`, producing the custom scope `aws-learning-journal/access`.
+- The App Client allows and the browser requests `openid email profile aws.cognito.signin.user.admin aws-learning-journal/access`. The first three support OIDC identity/profile behavior; the reserved Cognito scope permits current-user `GetUser`; the custom scope permits protected application routes.
+- Protected `/api/v1/*` routes require `aws-learning-journal/access` and use the Cognito **Access Token**, never the ID Token, with the HTTP API JWT authorizer.
+- When the Cognito-sub mapping is absent, `user-profile` passes the same verified Access Token to Cognito `GetUser`, uses only returned App Client-readable attributes, then conditionally creates the sub sentinel, normalized-email sentinel and User META. It does not trust request-body identity or call `AdminGetUser`.
 - An ADMIN action requires all three checks: valid Access Token, `cognito:groups` contains `ADMIN`, and a strongly consistent DynamoDB read confirms current `User.status == ACTIVE`.
 - API Gateway authenticates the token. Lambda owns group/status authorization and all domain rules; `User.role` alone never grants access.
 - No Cognito Identity Pool is created. Browser S3 upload uses a narrowly scoped presigned URL from `admin-content`, not general AWS credentials.
@@ -211,7 +214,7 @@ Each Lambda group has its own execution role and pre-created CloudWatch log grou
 | Principal | Required access | Explicitly excluded |
 | --- | --- | --- |
 | `public-content` Lambda | DynamoDB `GetItem`, `BatchGetItem`, `Query` on the environment table and GSI1; S3 `GetObject` on publishable Markdown/media prefixes; read exact runtime config/secret parameter paths | DynamoDB mutations/`Scan`, GSI2, S3 writes, Cognito admin APIs |
-| `user-profile` Lambda | DynamoDB strongly consistent reads plus bounded `PutItem`/`UpdateItem`/`TransactWriteItems` for User and uniqueness/bootstrap items; own log group | S3, content/admin writes, table `Scan`, Cognito administration |
+| `user-profile` Lambda | DynamoDB strongly consistent reads plus bounded `PutItem`/`UpdateItem`/`TransactWriteItems` for User and uniqueness/bootstrap items; own log group; token-authorized Cognito `GetUser` requires no IAM allow | S3, content/admin writes, table `Scan`, Cognito admin APIs including `AdminGetUser` |
 | `interactions` Lambda | DynamoDB `GetItem`, `BatchGetItem`, `Query`, conditional item writes and `TransactWriteItems` for interaction/idempotency/counter paths; cursor/view signing parameter reads | S3 writes, content publication, GSI admin listing, Cognito admin APIs |
 | `admin-content` Lambda | DynamoDB source/projection reads and bounded conditional/transaction writes on the table plus `Query` on GSI2; S3 `PutObject`-presign authority and `GetObject`/metadata validation on owned content/media prefixes; exact secret/config parameter reads | General bucket administration, arbitrary key writes, table `Scan`, Cognito user/group administration |
 
@@ -342,7 +345,8 @@ WAF may be reconsidered when abuse/attack evidence, public launch risk or compli
 | API domain | Regional `api.example.com`, same-site with frontend; no CloudFront `/api/*` behavior |
 | Compute | Exactly four bounded Lambda capability groups |
 | Authentication | Cognito User Pool Managed Login + Google, authorization code with PKCE |
-| Authorization | JWT authorizer; Lambda enforces access token/group/business rules and SC ACTIVE check |
+| OAuth scope contract | Resource Server `aws-learning-journal`, scope `access`; App Client allows `openid email profile aws.cognito.signin.user.admin aws-learning-journal/access` |
+| Authorization | JWT authorizer requires Access Token scope `aws-learning-journal/access`; Lambda enforces group/business rules and SC ACTIVE check |
 | Database | One DynamoDB Standard PROVISIONED table/environment with exactly two GSIs |
 | Object storage | One private S3 content/media bucket/environment, backend-owned keys, direct presigned upload |
 | CDN/front door | One application CloudFront distribution, S3 OAC, frontend origin deferred |

@@ -80,6 +80,26 @@ Breaking response/request changes require a future `/api/v2`. Additive optional 
 
 There is no custom `/login`, `/signup` or token API. Browser login uses Cognito Managed Login with Google through the OAuth 2.0 authorization-code flow with PKCE. The browser app client is public and has no client secret.
 
+The User Pool defines one V1 Cognito Resource Server and custom scope:
+
+| Setting | V1 value |
+| --- | --- |
+| Resource Server identifier | `aws-learning-journal` |
+| Scope name | `access` |
+| Full custom scope | `aws-learning-journal/access` |
+
+The App Client allows and the browser authorization request asks for this exact scope set:
+
+```text
+openid
+email
+profile
+aws.cognito.signin.user.admin
+aws-learning-journal/access
+```
+
+`openid`, `email` and `profile` support OIDC identity/profile behavior. `aws.cognito.signin.user.admin` authorizes Cognito `GetUser` for current-user bootstrap according to the App Client's readable attributes. `aws-learning-journal/access` authorizes protected application API routes. The ID Token may support frontend identity presentation but is never the backend API credential.
+
 Protected requests send:
 
 ```http
@@ -91,7 +111,7 @@ The HTTP API JWT authorizer is configured with:
 - issuer `https://cognito-idp.<region>.amazonaws.com/<userPoolId>`;
 - audience equal to the Cognito App Client ID;
 - identity source `$request.header.Authorization`;
-- a V1 API authorization scope such as `aws-learning-journal/access` on every AUTHENTICATED and ADMIN route.
+- the exact V1 API authorization scope `aws-learning-journal/access` on every AUTHENTICATED and ADMIN route.
 
 API Gateway validates signature/key, `iss`, `aud` or—when `aud` is absent—`client_id`, `exp`, `nbf`, `iat`, and the configured route scope. Requiring an authorization scope prevents an ID Token, which has no access-token scope, from being accepted as the API credential. Lambda additionally requires `token_use = access` before using forwarded claims; it does not reimplement cryptographic JWT verification already completed by the authorizer.
 
@@ -115,7 +135,7 @@ HTTP API may emit a gateway-native body for a request rejected before Lambda. La
 V1 chooses lazy, idempotent bootstrap on the first authenticated application request; no explicit bootstrap endpoint is added. The shared auth layer:
 
 1. Reads `COGNITO#<sub>/USER` strongly consistently (AP17).
-2. If absent, retrieves verified profile attributes from Cognito using the verified token username/sub context; it never trusts email/display name from the request body.
+2. If absent, calls Cognito `GetUser` with the same verified Access Token. The token must contain `aws.cognito.signin.user.admin`; `GetUser` returns Cognito-owned profile attributes such as email/display information within the App Client's readable-attribute policy. Bootstrap never trusts request-body email/name, never calls `AdminGetUser`, and does not require Cognito admin IAM permission.
 3. Conditionally transacts Cognito-sub sentinel, normalized-email sentinel and User META.
 4. On a retry, returns the existing matching User. A conflicting email mapping is not silently merged.
 
@@ -128,7 +148,7 @@ V1 uses one Lambda per bounded capability:
 | Lambda group | Route ownership | IAM direction |
 | --- | --- | --- |
 | `public-content` | Public Post, Topic and Series reads | Read public/source projections and approved S3 body/media |
-| `user-profile` | `/me` and bootstrap | Cognito profile lookup plus scoped User/sentinel reads/writes |
+| `user-profile` | `/me` and bootstrap | Token-authorized Cognito `GetUser` plus scoped User/sentinel reads/writes; no Cognito admin IAM permission for bootstrap |
 | `interactions` | Comments, likes, bookmarks, shares and views | Interaction/source/counter items; read Post eligibility |
 | `admin-content` | Admin Post/translation/lifecycle, Topic, Series and upload routes | Scoped content writes, DynamoDB transactions and S3 object/presign access |
 
@@ -976,7 +996,7 @@ This table is the source of truth for implementation. AP17–AP19 and AP12 are i
 
 1. Shared API DTOs, validation, error envelope, request IDs and cursor/idempotency helpers.
 2. API Gateway HTTP API base, `/api/v1` routes, dev/prod stage configuration and CORS.
-3. Cognito Managed Login app-client contract and JWT authorizer with required access scope.
+3. Cognito Resource Server, final App Client OAuth scope set, Managed Login and JWT authorizer with required `aws-learning-journal/access` scope.
 4. Four Lambda groups with shared runtime/config/logging and least-privilege roles.
 5. `/me` plus idempotent User bootstrap.
 6. Post META and PostTranslation repositories with physical version/expectedVersion behavior.
@@ -1002,7 +1022,9 @@ This table is the source of truth for implementation. AP17–AP19 and AP12 are i
 | Lambda grouping | Four bounded capabilities: public-content, user-profile, interactions, admin-content |
 | API version | `/api/v1`; additive compatible fields may stay V1 |
 | Authentication | Cognito Managed Login + Google, authorization code with PKCE, Cognito Access Token |
-| Gateway authorization | Native JWT authorizer with issuer, App Client audience and required V1 access scope |
+| OAuth scopes | `openid email profile aws.cognito.signin.user.admin aws-learning-journal/access`; custom scope is backed by Resource Server identifier `aws-learning-journal` and scope `access` |
+| Gateway authorization | Native JWT authorizer with issuer, App Client audience and required `aws-learning-journal/access` scope; ID Token is not an API credential |
+| User bootstrap | Missing sub mapping triggers token-authorized Cognito `GetUser`, then conditional sub/email sentinels + User META; no request-body identity or `AdminGetUser` |
 | ADMIN authorization | Verified access claims + `cognito:groups=ADMIN` + SC `User.status=ACTIVE` |
 | Pagination | Opaque versioned HMAC cursor; no offset/raw LEK |
 | Errors | Lambda standard envelope; honest gateway-native 401/429 exception normalized by client |
