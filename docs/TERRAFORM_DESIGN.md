@@ -2,7 +2,7 @@
 
 ## Purpose and status
 
-Tài liệu này định nghĩa cách target architecture trong `AWS_ARCHITECTURE.md` sẽ được biểu diễn, kiểm tra và deploy bằng Terraform. Nó tập trung vào repository layout, state, environment isolation, variables/outputs, ownership, secrets và workflow; không lặp lại business, persistence hay HTTP contract.
+Tài liệu này định nghĩa cách target architecture trong `INFRASTRUCTURE_DESIGN.md` sẽ được biểu diễn, kiểm tra và deploy bằng Terraform. `AWS_ARCHITECTURE.md` là companion resource summary. Tài liệu này tập trung vào repository layout, state, environment isolation, variables/outputs, ownership, secrets và workflow; không lặp lại business, persistence hay HTTP contract.
 
 Đây là design contract trước implementation. Chưa có Terraform configuration, state backend, CI workflow hay AWS resource nào được tạo trong phase này.
 
@@ -261,7 +261,7 @@ Names are derived in locals rather than independently typed for each resource.
 | Remote state bucket/lock objects policy | `bootstrap/state.tf` | Application roots never manage their own backend bucket |
 | Account-level AWS Budget/notifications | `bootstrap/budget.tf` | Exists before the first application environment |
 | DynamoDB table, two GSIs, TTL, capacity, PITR/protection | `modules/application/dynamodb.tf` | Must match `DYNAMODB_DESIGN.md`; no item/data seeding |
-| Content/media S3 bucket, policy, CORS, versioning | `modules/application/s3.tf` | One bucket per environment; state bucket is separate |
+| Frontend artifact, content/media and production access-log S3 buckets | `modules/application/s3.tf` | Private buckets with distinct deployment/data/log lifecycles; state bucket is separate |
 | Cognito User Pool, Resource Server `aws-learning-journal`/scope `access`, app client scope set, domain and groups | `modules/application/cognito.tf` | App Client allows `openid email profile aws.cognito.signin.user.admin aws-learning-journal/access`; Google secret boundary described below |
 | Four Lambda groups and invoke permissions | `modules/application/lambda.tf` | Prepared artifacts only |
 | Runtime IAM roles/policies | `modules/application/iam.tf` | One role/group; scoped environment resources |
@@ -369,8 +369,9 @@ Main/protected deployment:
 - Require reviewed plan and protected-environment approval for prod.
 - Apply that exact saved plan with the environment role.
 - Run post-apply infrastructure smoke tests and retain deployment evidence.
+- Build the Next.js static export outside Terraform, upload `out/` assets before HTML, run targeted CloudFront invalidation and test localized deep routes.
 
-Frontend hosting/deployment remains a separate workflow until the Next.js origin is finalized.
+Terraform owns the frontend bucket, CloudFront distribution/OAC/policies and DNS. The frontend workflow owns artifact bytes and build-time public environment values.
 
 ## Safe destroy and lifecycle
 
@@ -434,12 +435,12 @@ Abstract only after duplicated code, independent lifecycle or another real consu
 | Phase | Scope | Deployable/testable exit condition |
 | ---: | --- | --- |
 | 0 | Bootstrap remote-state bucket, lockfile behavior, IAM authentication and version pins | Lock/recovery test passes; dev/prod state keys inaccessible to the wrong role |
-| 1 | DynamoDB table/two GSIs/TTL/capacity plus private S3 content bucket | `terraform apply` succeeds in dev; table settings and bucket security checks match contracts |
+| 1 | DynamoDB table/two GSIs/TTL/capacity plus private frontend/content S3 buckets | `terraform apply` succeeds in dev; table settings and bucket security checks match contracts |
 | 2 | Four scoped IAM execution roles, explicit log groups and Lambda skeleton artifacts | Each function invokes and writes safe correlated logs; permissions fail closed outside its scope |
 | 3 | API Gateway HTTP API, integrations, CORS, stage/access logs and `/api/v1/health` | Health request reaches the `public-content` Lambda's operations branch and returns `200` |
 | 4 | Cognito User Pool/Resource Server/client/domain/JWT authorizer plus controlled Google IdP secret binding | PKCE requests the final five-scope set; Access Token supports `GetUser`; protected route requires `aws-learning-journal/access` and rejects wrong token/group |
 | 5 | CloudWatch dashboard/basic alarms and AWS Budget notifications | Test fault/threshold path is observable without noisy alert fan-out |
-| 6 | CloudFront/OAC, ACM and Route 53 records after frontend origin/domain decision | HTTPS frontend/media works; `api.<domain>` remains same-site and routes to Regional HTTP API |
+| 6 | Next.js static artifact delivery through CloudFront/OAC, ACM and Route 53 | HTTPS frontend/media works from private S3; root/deep-route mapping works; `api.<domain>` remains same-site and routes to Regional HTTP API |
 
 Each phase produces a reviewable plan and leaves dev in a coherent state. Prod is not created merely to test local development.
 
@@ -464,11 +465,12 @@ GET /api/v1/health
 | Gateway | API Gateway HTTP API; no REST API |
 | API namespace | `/api/v1/*`; health explicitly non-business |
 | Lambda ownership | Exactly four capability groups |
+| Frontend | Next.js static export; private S3 origin behind CloudFront; artifact built outside Terraform |
 | DynamoDB | One Standard PROVISIONED table/environment, exactly two named GSIs, existing capacity budget |
 | Authentication | Cognito User Pool + Google, authorization code with PKCE, Access Token |
 | OAuth/resource server | Resource Server `aws-learning-journal` + `access`; App Client permits the finalized five scopes including `aws.cognito.signin.user.admin` |
 | Authorization | JWT authorizer requires Access Token `aws-learning-journal/access`; Lambda adds ADMIN group/business rules and SC `User.status=ACTIVE` |
-| S3 boundary | Markdown/media object storage, backend-owned keys, direct presigned binary upload |
+| S3 boundary | Separate private frontend and Markdown/media buckets, backend-owned content keys, direct presigned binary upload |
 | Environments | Independent roots/state/roles/names for dev and prod |
 | Cost intent | Free Tier conscious with explicit budgets, retention and expensive-service exclusions |
 
@@ -483,7 +485,7 @@ No Terraform choice in this document changes the business semantics in `DATA_MOD
 | Backend | Hardened S3 backend with `use_lockfile=true`; no deprecated DynamoDB lock table |
 | Environment isolation | Separate dev/prod state keys, variables, IAM roles and apply gates; no workspaces |
 | Secrets | SSM SecureString, out-of-band secret values; explicit Google IdP binding exception to avoid Terraform-state plaintext |
-| Artifacts | Build outside Terraform; deploy immutable ZIP plus hash |
+| Artifacts | Build outside Terraform; deploy immutable Lambda ZIP plus hash and Next.js `out/` through its own workflow |
 | Prod safety | Reviewed saved plan, manual approval, data-service protections and no routine destroy |
 | First milestone | Dev apply plus non-business `GET /api/v1/health` smoke test |
 

@@ -2,14 +2,15 @@
 
 ## Purpose and status
 
-Tài liệu này chốt **target AWS resource architecture** cho phase triển khai backend/IaC tiếp theo. Repository hiện vẫn là frontend prototype dùng mock data; chưa có backend, Terraform state hay AWS resource nào được triển khai.
+Tài liệu này tóm tắt **target AWS resource architecture** cho phase triển khai backend/IaC tiếp theo. `INFRASTRUCTURE_DESIGN.md` là source of truth chi tiết cho deployment topology, frontend hosting, service boundaries, security, operations và cost posture. Repository hiện vẫn là frontend prototype dùng mock data; chưa có backend, Terraform state hay AWS resource nào được triển khai.
 
 Các ranh giới source of truth:
 
 - `DATA_MODEL.md` sở hữu business/domain semantics.
 - `DYNAMODB_DESIGN.md` sở hữu physical item mapping, access patterns, transaction và capacity allocation.
 - `API_DESIGN.md` sở hữu HTTP routes, DTO, auth classes và error contract.
-- Tài liệu này chỉ sở hữu cách các AWS service kết nối, được bảo vệ và vận hành.
+- `INFRASTRUCTURE_DESIGN.md` sở hữu cách các AWS service kết nối, được bảo vệ, deploy và vận hành.
+- Tài liệu này là companion summary và phải giữ nhất quán với infrastructure design.
 - `TERRAFORM_DESIGN.md` sở hữu cách biểu diễn/deploy kiến trúc này bằng Terraform.
 
 Mục tiêu V1 là AWS-native, serverless, dễ học theo AWS SAA, dễ vận hành cho personal technical blog và có cost guardrail rõ. Thiết kế không giả định toàn bộ hệ thống miễn phí.
@@ -21,7 +22,7 @@ flowchart LR
     User[Browser user]
     DNS[Route 53]
     CF[CloudFront<br/>one application distribution]
-    FE[Next.js frontend origin<br/>hosting mode not finalized]
+    FE[Next.js static export<br/>private frontend S3]
     API[API Gateway HTTP API<br/>api.example.com/api/v1/*]
     JWT[JWT Authorizer]
     L[Four bounded Lambda groups]
@@ -47,7 +48,7 @@ flowchart LR
     DDB -. capacity/throttle metrics .-> CW
 ```
 
-CloudFront is the intended frontend/media front door, but the Next.js compute/origin is deliberately unresolved. The current repository uses App Router, Server Components and client-side interactions, has no `output: "export"`, and must not be constrained to S3 static hosting until SSR/runtime needs and the hosting product are decided.
+CloudFront là frontend/media front door. V1 xuất Next.js thành static artifact trong private frontend S3 bucket. Source hiện có routes hữu hạn, locale static params, local data và không dùng request-time server APIs. Bước frontend implementation phải thêm static-export config, xử lý root redirect và dùng `next/image` static-compatible; task documentation hiện tại chưa sửa application code. Public content slug mới cần frontend rebuild. Nếu sau này cần preview, ISR hoặc request-time SSR, hosting model phải được review lại thay vì ghép frontend runtime vào bốn backend Lambda groups.
 
 ## API architecture
 
@@ -132,7 +133,7 @@ The initial provisioned allocation stays exactly with the persistence contract: 
 
 ## S3 object storage
 
-Each environment gets one private S3 General Purpose content/media bucket. Logical responsibilities are separated by backend-owned prefixes rather than extra buckets in V1:
+Each environment gets one private S3 General Purpose content/media bucket. Static frontend artifacts nằm trong một private frontend bucket riêng để deployment cleanup không tác động durable content. Production có thêm access-log bucket riêng khi standard CloudFront logging được bật. Logical content responsibilities are separated by backend-owned prefixes:
 
 | Prefix family | Content |
 | --- | --- |
@@ -172,21 +173,21 @@ S3 and DynamoDB do not share a transaction. The immutable/new S3 version is writ
 
 Production V1 chooses:
 
-- `https://example.com` (and optional `www`) -> one CloudFront application distribution -> the eventual Next.js-capable frontend origin.
+- `https://example.com` (and optional `www`) -> one CloudFront application distribution -> private S3 static frontend origin.
 - Public media paths on the same distribution -> private S3 origin through OAC. Markdown body remains behind the content API.
 - `https://api.example.com/api/v1/*` -> API Gateway **Regional HTTP API custom domain**, directly; `/api/*` is not routed through CloudFront in V1.
 
 This keeps frontend and API as separate origins but under the same registrable site, so the `HttpOnly; Secure; SameSite=Lax` view-cookie contract in `API_DESIGN.md` remains valid. It also avoids adding API cache-key, authorization-header, cookie and non-idempotent-method behavior to CloudFront before there is a need. Credentialed API CORS uses exact frontend origins.
 
-Only one persistent application CloudFront distribution is planned for production. Dev uses direct development origins by default and creates an edge distribution only for deliberate Phase 6 testing. Cognito may use an AWS-managed CloudFront distribution behind its custom domain; the application does not create another distribution for it. Routing `/api/*` through the application distribution may be reconsidered only if a proven single-origin, edge control or latency requirement outweighs the operational cost.
+Only one persistent application CloudFront distribution is planned for production. Dev runs locally by default and creates its own edge distribution only for deliberate integration testing. Cognito may use an AWS-managed CloudFront distribution behind its custom domain; the application does not create another distribution for it. Routing `/api/*` through the application distribution may be reconsidered only if a proven single-origin, edge control or latency requirement outweighs the operational cost.
 
 CloudFront behavior is conservative:
 
 - Redirect viewer HTTP to HTTPS and attach an appropriate security response headers policy.
-- Cache immutable/versioned media aggressively; use object version/key changes instead of routine invalidations.
+- Cache immutable/versioned Next.js assets and media aggressively; keep HTML TTL short and invalidate only changed HTML/manifests after deploy.
 - Do not cache personalized/authenticated API responses because API traffic bypasses CloudFront.
-- Decide HTML/RSC cache behavior only after the Next.js hosting origin is selected; do not assume static export.
-- Enable standard access logging only with an explicit destination, retention/lifecycle and cost review; do not enable real-time logs in V1.
+- Use a small viewer-request CloudFront Function to redirect `/` to `/en/` and map static-export route paths to their `index.html` objects; do not mask every 403/404 with a homepage fallback.
+- Enable production standard access logging to a private bucket with explicit retention/lifecycle; do not enable real-time logs in V1.
 
 ## Route 53 and ACM
 
@@ -303,7 +304,7 @@ flowchart LR
     Artifact --> Apply
 ```
 
-Lambda compilation/package creation happens before Terraform. Terraform deploys a prepared artifact and content hash; it is not the application build system. Prod applies require review/manual approval. Frontend build/hosting deployment is a separate pipeline until its runtime/origin is selected; infrastructure must not silently force static export.
+Lambda compilation/package creation happens before Terraform. Terraform deploys a prepared artifact and content hash; it is not the application build system. Prod applies require review/manual approval. Frontend build also runs outside Terraform: it produces `out/`, uploads immutable assets before HTML, then performs a targeted CloudFront invalidation and smoke test.
 
 ## Failure boundaries
 
@@ -332,7 +333,7 @@ No custom active-active or complex HA layer is added. API Gateway, Lambda, Dynam
 
 ## Deferred decisions
 
-V1 explicitly defers AWS WAF, Shield Advanced subscription, multi-Region deployment, DynamoDB Global Tables, Lambda@Edge, OpenSearch, DAX, Redis/ElastiCache, EventBridge workflows, Step Functions, Kinesis, complex DR and active-active architecture. It also defers frontend hosting/origin selection, public Series catalog AP22 and Practice backend APIs.
+V1 explicitly defers AWS WAF, Shield Advanced subscription, multi-Region deployment, DynamoDB Global Tables, Lambda@Edge, OpenSearch, DAX, Redis/ElastiCache, EventBridge workflows, Step Functions, Kinesis, complex DR and active-active architecture. It also defers any SSR/ISR frontend runtime, public Series catalog AP22 and Practice backend APIs.
 
 WAF may be reconsidered when abuse/attack evidence, public launch risk or compliance warrants its fixed/variable cost. AWS Shield Standard remains the AWS-provided baseline for eligible resources; no paid Shield Advanced subscription is planned.
 
@@ -340,7 +341,7 @@ WAF may be reconsidered when abuse/attack evidence, public launch risk or compli
 
 | Concern | Authoritative V1 choice |
 | --- | --- |
-| Frontend | Next.js; hosting/runtime origin not finalized and not assumed static-only |
+| Frontend | Next.js static export in a private S3 frontend bucket; rebuild when published slug routes change |
 | API | API Gateway HTTP API at `/api/v1/*` |
 | API domain | Regional `api.example.com`, same-site with frontend; no CloudFront `/api/*` behavior |
 | Compute | Exactly four bounded Lambda capability groups |
@@ -348,8 +349,8 @@ WAF may be reconsidered when abuse/attack evidence, public launch risk or compli
 | OAuth scope contract | Resource Server `aws-learning-journal`, scope `access`; App Client allows `openid email profile aws.cognito.signin.user.admin aws-learning-journal/access` |
 | Authorization | JWT authorizer requires Access Token scope `aws-learning-journal/access`; Lambda enforces group/business rules and SC ACTIVE check |
 | Database | One DynamoDB Standard PROVISIONED table/environment with exactly two GSIs |
-| Object storage | One private S3 content/media bucket/environment, backend-owned keys, direct presigned upload |
-| CDN/front door | One application CloudFront distribution, S3 OAC, frontend origin deferred |
+| Object storage | Separate private frontend and content/media S3 buckets, backend-owned content keys, direct presigned upload |
+| CDN/front door | One application CloudFront distribution with private frontend/media S3 origins through OAC |
 | DNS/TLS | Route 53 + ACM; CloudFront/Cognito certs in `us-east-1`, API cert in API Region |
 | Monitoring | CloudWatch metrics, structured logs, explicit retention and small alarm set |
 | Secrets | SSM Parameter Store SecureString by default |
