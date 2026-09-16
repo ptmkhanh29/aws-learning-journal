@@ -3,6 +3,7 @@ import { Footer } from "@/components/layout/footer";
 import { localeFrom, type LocalePageProps } from "@/lib/page";
 
 export function generateStaticParams() { return [{ locale: "en" }, { locale: "vi" }]; }
+export const dynamicParams = false;
 
 export default async function LocaleLayout({ children, params }: LocalePageProps & { children: React.ReactNode }) {
   const locale = await localeFrom(params);

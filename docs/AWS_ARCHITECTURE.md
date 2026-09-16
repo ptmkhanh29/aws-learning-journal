@@ -48,7 +48,7 @@ flowchart LR
     DDB -. capacity/throttle metrics .-> CW
 ```
 
-CloudFront là frontend/media front door. V1 xuất Next.js thành static artifact trong private frontend S3 bucket. Source hiện có routes hữu hạn, locale static params, local data và không dùng request-time server APIs. Bước frontend implementation phải thêm static-export config, xử lý root redirect và dùng `next/image` static-compatible; task documentation hiện tại chưa sửa application code. Public content slug mới cần frontend rebuild. Nếu sau này cần preview, ISR hoặc request-time SSR, hosting model phải được review lại thay vì ghép frontend runtime vào bốn backend Lambda groups.
+CloudFront là frontend/media front door. V1 xuất Next.js thành static artifact trong private frontend S3 bucket. Source hiện có routes hữu hạn, locale static params, local data, `output: "export"`, trailing-slash output và `next/image` ở chế độ `unoptimized`; root route cũng được xuất thành static HTML redirect. `npm run build` tạo deployment artifact tại `out/` và không dùng request-time server APIs. Public content slug mới cần frontend rebuild. Nếu sau này cần preview, ISR hoặc request-time SSR, hosting model phải được review lại thay vì ghép frontend runtime vào bốn backend Lambda groups.
 
 ## API architecture
 

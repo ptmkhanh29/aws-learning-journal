@@ -131,11 +131,7 @@ Quyết định này dựa trên source hiện tại:
 - Client Components chỉ xử lý theme, navigation, filters, practice và mock auth qua browser state. Các component này vẫn hoạt động trong static export.
 - Không có requirement hiện tại cần một always-on Next.js server.
 
-Build chạy `next build` với target `output: "export"` và tạo immutable deployment artifact từ thư mục `out/`. Bước implementation frontend sau tài liệu này phải xử lý ba compatibility items đã thấy trong source, nhưng task hiện tại không sửa code:
-
-1. Cấu hình static export và chọn trailing-slash convention thống nhất với CloudFront Function URI mapping.
-2. Thay root Server Component redirect hiện tại bằng edge redirect hoặc một static-compatible entry.
-3. Dùng `next/image` ở chế độ `unoptimized` cho các SVG/WebP đã tối ưu sẵn, hoặc cung cấp image loader riêng. V1 chọn `unoptimized` để không thêm một image service chỉ cho prototype assets.
+Build chạy `next build` với target `output: "export"` và tạo immutable deployment artifact từ thư mục `out/`. Source frontend hiện đã bật trailing-slash output thống nhất với CloudFront Function URI mapping, thay root redirect bằng static HTML entry và dùng `next/image` ở chế độ `unoptimized` cho các SVG/WebP đã tối ưu sẵn. Vì vậy artifact không cần Next.js Image Optimization API hoặc một Next.js Node server trên AWS.
 
 Public content từ API có thể được fetch ở client. Với content detail routes theo canonical slug, build phải xuất danh sách route đã publish. Publish content mới vì vậy cần một frontend rebuild/deploy trước khi URL mới tồn tại. Đây là trade-off được chấp nhận cho V1 vì số lượng content và tần suất publish thấp. Nếu yêu cầu preview, publish tức thời, ISR hoặc request-time SEO trở thành quan trọng, chuyển frontend sang một Next.js runtime-capable hosting model là một architecture change có review, không ghép thêm Lambda vào bốn backend groups.
 

@@ -8,7 +8,8 @@ A bilingual personal technical blog for engineering notes, experiments, labs, tr
 - Data: Mock only
 - Authentication: Mock only, stored locally for UI review
 - Backend: Not implemented
-- Deployment: Not implemented
+- Frontend artifact: Static export configured; `npm run build` produces `out/`
+- AWS deployment: Not implemented
 
 ## Stack
 
@@ -24,6 +25,14 @@ npm run dev
 ```
 
 Open `http://localhost:3000/en` or `http://localhost:3000/vi`.
+
+## Build the static deployment artifact
+
+```bash
+npm run build
+```
+
+Upload the generated `out/` directory to the private frontend S3 origin. The `.next/` directory is build workspace data, not the deployment artifact.
 
 ## Prototype routes
 
