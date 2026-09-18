@@ -1,8 +1,10 @@
+import Link from "next/link";
+
 export default function RootPage() {
   return (
     <main>
       <meta httpEquiv="refresh" content="0;url=/en/" />
-      <p>Continue to <a href="/en/">English</a>.</p>
+      <p>Continue to <Link href="/en/">English</Link>.</p>
     </main>
   );
 }

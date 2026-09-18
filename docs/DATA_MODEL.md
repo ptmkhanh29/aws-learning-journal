@@ -9,7 +9,7 @@ Tài liệu này là source of truth cho logical data/domain design của Khanh 
 - Repository hiện vẫn là frontend prototype dùng mock data; tài liệu này không khẳng định database, API, Cognito hay AWS resource nào đã được triển khai.
 - Practice là mô hình sơ bộ và chưa phải implementation contract.
 
-Target architecture dự kiến gồm Next.js frontend và server runtime/AWS Lambda, CloudFront, Amazon S3, Amazon DynamoDB, Amazon Cognito User Pool với Google federation, CloudWatch, ACM và Route 53.
+Target architecture dự kiến gồm Next.js static-export frontend trên S3/CloudFront và backend runtime riêng trên AWS Lambda, cùng Amazon DynamoDB, Amazon Cognito User Pool với Google federation, CloudWatch, ACM và Route 53. Frontend không chạy Next.js Node server trên AWS.
 
 ## Design sequence
 

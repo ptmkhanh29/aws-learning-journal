@@ -304,7 +304,7 @@ flowchart LR
     Artifact --> Apply
 ```
 
-Lambda compilation/package creation happens before Terraform. Terraform deploys a prepared artifact and content hash; it is not the application build system. Prod applies require review/manual approval. Frontend build also runs outside Terraform: it produces `out/`, uploads immutable assets before HTML, then performs a targeted CloudFront invalidation and smoke test.
+Lambda compilation/package creation happens before Terraform. Terraform deploys a prepared artifact and content hash; it is not the application build system. Prod applies require review/manual approval. Frontend build also runs outside Terraform in the selected GitHub Actions deployment flow: it runs `npm ci`, lint and build, produces `out/`, assumes a scoped AWS role through GitHub OIDC, uploads immutable assets before HTML, then performs a targeted CloudFront invalidation and smoke test. Terraform provisions the bucket, distribution, OAC, IAM/OIDC boundary and related infrastructure; it does not upload frontend bytes.
 
 ## Failure boundaries
 

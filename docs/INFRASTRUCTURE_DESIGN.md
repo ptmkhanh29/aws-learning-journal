@@ -139,8 +139,10 @@ Frontend artifact deployment:
 
 ```text
 source commit
-  -> install + lint + typecheck + next build
+  -> GitHub Actions
+  -> npm ci + lint + next build
   -> out/ artifact + digest
+  -> assume scoped AWS role through GitHub OIDC
   -> upload immutable assets first
   -> upload HTML/manifests last
   -> targeted CloudFront invalidation for changed HTML only
@@ -393,7 +395,7 @@ Runtime role chỉ đọc exact parameter ARNs cần thiết. Không đặt secr
 - Cognito public client không có secret; authorization code with PKCE, exact callback URLs, `state` và OIDC `nonce`.
 - API Gateway JWT authorizer xác thực Access Token/scope; Lambda kiểm tra `token_use`, group, current User status và resource-level authorization.
 - One runtime role per Lambda group, scoped deployment roles và no broad `iam:PassRole`.
-- Không hard-code hay phát hành long-lived AWS credentials. CI sau này dùng OIDC/assumed role.
+- Không hard-code hay phát hành long-lived AWS credentials. GitHub Actions dùng GitHub OIDC để assume deployment role được scope theo repository/ref và exact frontend resources; workflow được implement ở phase CI/CD kế tiếp.
 - API/Lambda/CloudFront logs có retention và access control; sensitive headers/body không được log.
 - Prod DynamoDB có PITR/deletion protection; content S3 có Versioning; Terraform state dùng private encrypted backend với locking và restricted roles.
 
@@ -451,7 +453,7 @@ Terraform state bootstrap and apply roles
     -> smoke tests + alarms/budget verification
 ```
 
-Một số resources có thể được Terraform graph tạo song song, nhưng operational rollout giữ các gates trên. Lambda artifact được build/test bên ngoài Terraform và referenced bằng immutable digest. Frontend cũng được build ngoài Terraform; Terraform sở hữu bucket/distribution/policies, deployment workflow sở hữu artifact bytes.
+Một số resources có thể được Terraform graph tạo song song, nhưng operational rollout giữ các gates trên. Lambda artifact được build/test bên ngoài Terraform và referenced bằng immutable digest. Frontend cũng được build ngoài Terraform bởi GitHub Actions; Terraform sở hữu bucket/distribution/OAC/policies và OIDC role boundary, deployment workflow sở hữu artifact bytes và không lưu long-lived AWS access keys.
 
 Prod dùng reviewed saved plan, protected environment approval và same artifact promotion khi có thể. Không dùng casual `-auto-approve`, không rebuild secret-dependent bytes trong `terraform apply`, và không coi resource creation thành đủ nếu end-to-end smoke test chưa chạy.
 

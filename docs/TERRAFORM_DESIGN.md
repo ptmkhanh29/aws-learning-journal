@@ -351,9 +351,9 @@ For local development, `terraform fmt` without `-check` may format the files bef
 - Never use casual `-auto-approve` for prod.
 - Do not run prod apply from an unreviewed local branch.
 
-## Future CI/CD
+## Selected CI/CD deployment approach
 
-No workflow is implemented in this phase. Target behavior:
+GitHub Actions is the selected CI/CD platform. No workflow is implemented in this phase; the next implementation step follows this contract:
 
 PR checks:
 
@@ -369,9 +369,9 @@ Main/protected deployment:
 - Require reviewed plan and protected-environment approval for prod.
 - Apply that exact saved plan with the environment role.
 - Run post-apply infrastructure smoke tests and retain deployment evidence.
-- Build the Next.js static export outside Terraform, upload `out/` assets before HTML, run targeted CloudFront invalidation and test localized deep routes.
+- Build the Next.js static export outside Terraform with `npm ci`, lint and build; upload `out/` assets before HTML, run targeted CloudFront invalidation and test localized deep routes.
 
-Terraform owns the frontend bucket, CloudFront distribution/OAC/policies and DNS. The frontend workflow owns artifact bytes and build-time public environment values.
+Terraform owns the frontend bucket, CloudFront distribution/OAC/policies, DNS and the GitHub OIDC deployment-role boundary. The GitHub Actions frontend workflow owns artifact bytes and build-time public environment values; Terraform never uploads `out/`.
 
 ## Safe destroy and lifecycle
 

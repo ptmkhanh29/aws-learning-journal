@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Repository-local agent tooling is not part of the frontend application.
+    ".agents/**",
   ]),
 ]);
 
